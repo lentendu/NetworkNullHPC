@@ -115,11 +115,12 @@ EOF
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
-# Calculate number of parallel jobs and the amount of memory to request
+# Calculate number of parallel jobs and the amount of memory and time to request
 matsize=`cat nbotu`
 pairsize=$((matsize*(matsize-1)/2))
 memsize=$((pairsize/5000000+1))
-blocks=$(( (pairsize/$BOOTSTRAP0+9)/10 ))
+blocks=$(( (pairsize/10000+9)/10 ))
+reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
@@ -134,7 +135,7 @@ cat > sub_range <<EOF
 #SBATCH -J estimate_range_$i
 #SBATCH -o log.estimate_range.%j.out
 #SBATCH -e log.estimate_range.%j.err
-#SBATCH -t 01:00:00
+#SBATCH -t $reqtime
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 
@@ -152,8 +153,8 @@ cat > sub_spearman <<EOF
 #SBATCH -o log.%x.%A.out
 #SBATCH -e log.%x.%A.err
 #SBATCH --open-mode=append
-#SBATCH -t 03:00:00
-#SBATCH -N 1
+#SBATCH -t $reqtime
+#SBATCH -n 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 
@@ -168,11 +169,9 @@ cat > sub_threshold <<EOF
 #!/bin/bash
 
 #SBATCH -J threshold_$i
-#SBATCH -o log.%x.%j.out
-#SBATCH -e log.%x.%j.err
-#SBATCH --open-mode=append
+#SBATCH -o log.%j.out
+#SBATCH -e log.%j.err
 #SBATCH -t 01:00:00
-#SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=16G
@@ -220,8 +219,8 @@ cat > sub_network <<EOF
 #!/bin/bash
 
 #SBATCH -J network_$i
-#SBATCH -o log.%x.%j.out
-#SBATCH -e log.%x.%j.err
+#SBATCH -o log.%j.out
+#SBATCH -e log.%j.err
 #SBATCH -t 12:00:00
 #SBATCH -N 1
 #SBATCH -n 1
