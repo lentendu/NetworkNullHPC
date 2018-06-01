@@ -16,12 +16,15 @@ DESCRIPTION
 	-a account_name
 		Account name for SLURM sbatch -A option.
 	
+	-b number_of_bootstrap
+		Number of bootstraped random noise addition. Default: 1000
+	
 	-d expected_depth
 		Expected sequencing depth to normalize read counts. Default: 0.5 * median read count. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
-		
+	
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 
@@ -41,13 +44,20 @@ COPYRIGHT
 EOF
 }
 
+#set default options
+BOOTSTRAP=1000
+DEPTH=0.5
+MINOCC=0.1
+MINCOUNT=0.1
+
 # get options
-while getopts ":a:d:ho:r:" opt
+while getopts ":a:b:d:ho:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
 			exit 1;;
 		a)	SLURMACCOUNT=$(echo "#SBATCH -A $OPTARG");;
+		b)	BOOTSTRAP=$OPTARG;;
 		d)	DEPTH=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
 		r)	MINCOUNT=$OPTARG;;
@@ -98,8 +108,8 @@ mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 TAB=$'\t'
 cat > config <<EOF
-cksum${TAB}mat${TAB}depth${TAB}minocc${TAB}mincount
-$i${TAB}$FULLINPUT${TAB}${DEPTH:-0.5}${TAB}${MINOCC:-0.1}${TAB}${MINCOUNT:-0.1}
+cksum${TAB}mat${TAB}nboot${TAB}depth${TAB}minocc${TAB}mincount
+$i${TAB}$FULLINPUT${TAB}$BOOTSTRAP${TAB}$DEPTH${TAB}$MINOCC${TAB}$MINCOUNT
 EOF
 
 # Normalize OTU matrix and get its size
@@ -109,7 +119,7 @@ Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_ma
 matsize=`cat nbotu`
 pairsize=$((matsize*(matsize-1)/2))
 memsize=$((pairsize/5000000+1))
-blocks=$(( (pairsize/10000+9)/10 ))
+blocks=$(( (pairsize/$BOOTSTRAP0+9)/10 ))
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
@@ -138,7 +148,7 @@ cat > sub_spearman <<EOF
 #!/bin/bash
 
 #SBATCH -J spearman_$i
-#SBATCH -a 1-1000%400
+#SBATCH -a 1-$BOOTSTRAP
 #SBATCH -o log.%x.%A.out
 #SBATCH -e log.%x.%A.err
 #SBATCH --open-mode=append
@@ -169,19 +179,19 @@ cat > sub_threshold <<EOF
 $SLURMACCOUNT
 
 cd spearman_rand_r
-parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_{\$a..\$((a+19))} > paste_cc_\$a' ::: {1..1000..20}
-parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_ex_{\$a..\$((a+19))} > paste_cc_ex_\$a' ::: {1..1000..20}
+parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_{\$a..\$((a+19))} > paste_cc_\$a' ::: {1..$BOOTSTRAP..20}
+parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_ex_{\$a..\$((a+19))} > paste_cc_ex_\$a' ::: {1..$BOOTSTRAP..20}
 wait
-paste paste_cc_{1..1000..20} > ../rand_cc
-paste paste_cc_ex_{1..1000..20} > ../rand_cc_ex
+paste paste_cc_{1..$BOOTSTRAP..20} > ../rand_cc
+paste paste_cc_ex_{1..$BOOTSTRAP..20} > ../rand_cc_ex
 rm paste_cc_[0-9]*
 rm paste_cc_ex_[0-9]*
 cd ..
 # at which threshold the largest connected component contain less than 1% of total OTU number in 95 % of the random matrices?
 POS_TRESH=\$(awk '{print \$1*100}' pos_tresh_range)
-paste <(seq \$((POS_TRESH-10)) \$((POS_TRESH+10)) | awk '{print \$1/100}') rand_cc | awk -v S=\$(cat $i_size) '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*S){count+=1}};if(count>=1000*0.95){print \$1;exit}}' > threshold
+paste <(seq \$((POS_TRESH-10)) \$((POS_TRESH+10)) | awk '{print \$1/100}') rand_cc | awk -v S=\$(cat $i_size) '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*S){count+=1}};if(count>=$BOOTSTRAP*0.95){print \$1;exit}}' > threshold
 NEG_TRESH=\$(awk '{print \$1*100}' neg_tresh_range)
-paste <(seq \$((NEG_TRESH-10)) \$((NEG_TRESH+10)) | awk '{print -\$1/100}') rand_cc_ex | awk -v S=\$(cat $i_size) '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*S){count+=1}};if(count>=1000*0.95){print \$1;exit}}' > ex_threshold
+paste <(seq \$((NEG_TRESH-10)) \$((NEG_TRESH+10)) | awk '{print -\$1/100}') rand_cc_ex | awk -v S=\$(cat $i_size) '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*S){count+=1}};if(count>=$BOOTSTRAP*0.95){print \$1;exit}}' > ex_threshold
 
 EOF
 

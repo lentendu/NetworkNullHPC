@@ -13,13 +13,13 @@ config<-read.table("config",h=T,as.is=2)
 mat<-read.table(config$mat,h=T)
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
-for (i in 3:5){assign(names(config)[i],config[1,i])}
+for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # Drop samples with too few reads
 if(mincount>1) {
   minc<-mincount
 } else {
-  minc<-median(rowSums(mat))*mincount
+  minc<-ceiling(median(rowSums(mat))*mincount)
 }
 mat_tmp<-mat[which(rowSums(mat)>=minc),]
 
