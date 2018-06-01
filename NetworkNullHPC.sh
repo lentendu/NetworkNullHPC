@@ -110,12 +110,10 @@ matsize=`cat nbotu`
 pairsize=$((matsize*(matsize-1)/2))
 memsize=$((pairsize/5000000+1))
 blocks=$(( (pairsize/10000+9)/10 ))
-if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINOCCINFO=" * number of samples" ; fi
-if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINCOUNTINFO=" * the median read count" ; fi
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
-The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matsize OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
+The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
 EOF
 cat info
 
