@@ -115,7 +115,7 @@ if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINCOUNTINFO=" * the median 
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
-The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
+The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matsize OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
 EOF
 cat info
 

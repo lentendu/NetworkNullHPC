@@ -7,7 +7,7 @@ ncores<-as.numeric(commandArgs()[7])
 blocks<-as.numeric(commandArgs()[8])
 
 # read options
-config<-read.table("config",h=T,as.is=1)
+config<-read.table("config",h=T,as.is=2)
 for (i in 3:5){assign(names(config)[i],config[1,i])}
 
 # load edges

@@ -4,7 +4,7 @@ suppressMessages(library(igraph,quietly=T))
 suppressMessages(library(rhdf5))
 
 # read options
-config<-read.table("config",h=T,as.is=1)
+config<-read.table("config",h=T,as.is=2)
 for (i in 3:5){assign(names(config)[i],config[1,i])}
 
 # load normalize matrix 
