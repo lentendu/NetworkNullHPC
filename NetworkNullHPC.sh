@@ -28,6 +28,9 @@ DESCRIPTION
 AUTHOR
 	Guillaume Lentendu
 
+REFERENCE
+	Connor, N., Barberán, A., & Clauset, A. (2017). Using null models to infer microbial co-occurrence networks. PLOS ONE, 12(5), e0176751. doi:10.1371/journal.pone.0176751
+
 REPORTING BUGS
 	Submit suggestions and bug-reports at <https://github.com/lentendu/NetworkNullHPC/issues>, or send an email to <lentendu@rhrk.uni-kl.de>.
 	
