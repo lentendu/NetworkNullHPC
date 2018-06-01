@@ -97,25 +97,25 @@ i=$(cat <(date +%s) $FULLINPUT | cksum | awk '{print $1}')
 mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 TAB=$'\t'
-cat > config << EOF
+cat  << EOF > config
 cksum${TAB}mat${TAB}depth${TAB}minocc${TAB}mincount
 $i${TAB}$FULLINPUT${TAB}${DEPTH:-0.5}${TAB}${MINOCC:-0.1}${TAB}${MINCOUNT:-0.1}
 EOF
 
 # Normalize OTU matrix and get its size
-Rscript --vanilla $MYSD/rscripts/clean_mat.R $INPUT > log.clean_mat.out 2> log.clean_mat.err
+Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
 # Calculate number of parallel jobs and the amount of memory to request
 matsize=`cat nbotu`
 pairsize=$((matsize*(matsize-1)/2))
 memsize=$((pairsize/5000000+1))
 blocks=$(( (pairsize/10000+9)/10 ))
-if [ ${MINOCC:-0.1} -le 1 ]; then MINOCCINFO=" * number of samples" ; fi
-if [ ${MINCOUNT:-0.1} -le 1 ]; then MINCOUNTINFO=" * the median read count" ; fi
-echo ""
+if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINOCCINFO=" * number of samples" ; fi
+if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINCOUNTINFO=" * the median read count" ; fi
 cat << EOF > info
-echo "The initial OTU matrix contains ${cat nbsamp_ori} samples and ${cat nbotu_ori} OTUs."
-echo "The normalied matrix used for network calculation now contains ${cat nbsamp} samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO."
+
+The initial OTU matrix contains ${cat nbsamp_ori} samples and ${cat nbotu_ori} OTUs.
+The normalied matrix used for network calculation now contains ${cat nbsamp} samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
 EOF
 cat info
 
@@ -232,7 +232,6 @@ Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
 		
 		The input options are:
 		column -t -s \$'\t' config
-		
 EOF2
 	cat << EOF3>info_end
 		

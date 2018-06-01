@@ -9,7 +9,7 @@ library(Hmisc)
 library(igraph)
 
 # read options
-config<-read.table("config",h=T,as.is=1)
+config<-read.table("config",h=T,as.is=2)
 mat<-read.table(config$mat,h=T)
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
