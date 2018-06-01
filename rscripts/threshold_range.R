@@ -17,10 +17,10 @@ blocks<-ceiling(size/1e5)
 otusnum<-seq(1,ncol(mat))
 name_length<-nchar(tail(otusnum,1))
 pair_names<-combn(sprintf(paste0("%0",name_length,"d"),otusnum),2)
-net_name<-matrix(c(paste(pair_names[1,],pair_names[2,],sep="-"),rep(NA,ceiling(size/1e5)*1e5-size)),nrow=1e5)
+full_net_name<-matrix(c(paste(pair_names[1,],pair_names[2,],sep="-"),rep(NA,ceiling(size/1e5)*1e5-size)),nrow=1e5)
 h5createFile("net_name.h5")
 h5createDataset("net_name.h5","name",c(1e5,blocks),storage.mode="character",size=name_length*2+2,chunk=c(1e5,1),level=6)
-h5write(net_name,file="net_name.h5",name="name")
+h5write(full_net_name,file="net_name.h5",name="name")
 
 # add noise to matrix
 seed<-1
