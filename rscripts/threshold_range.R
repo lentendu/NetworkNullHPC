@@ -1,6 +1,7 @@
 suppressMessages(library(foreach))
 suppressMessages(library(Hmisc))
 suppressMessages(library(igraph,quietly=T))
+suppressMessages(library(rhdf5))
 
 # read options
 config<-read.table("config",h=T,as.is=1)

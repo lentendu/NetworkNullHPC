@@ -2,7 +2,7 @@
 
 # Usage info
 show_help() {
-cat << EOF
+cat <<EOF
 
 NAME
 	Network construction following Connor et al. (2017) for SLURM jod sheduler
@@ -97,7 +97,7 @@ i=$(cat <(date +%s) $FULLINPUT | cksum | awk '{print $1}')
 mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 TAB=$'\t'
-cat  << EOF > config
+cat > config <<EOF
 cksum${TAB}mat${TAB}depth${TAB}minocc${TAB}mincount
 $i${TAB}$FULLINPUT${TAB}${DEPTH:-0.5}${TAB}${MINOCC:-0.1}${TAB}${MINCOUNT:-0.1}
 EOF
@@ -112,15 +112,15 @@ memsize=$((pairsize/5000000+1))
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINOCCINFO=" * number of samples" ; fi
 if [ $(echo ${MINOCC:-0.1}"<=1" | bc) -eq 1 ]; then MINCOUNTINFO=" * the median read count" ; fi
-cat << EOF > info
+cat > info <<EOF
 
-The initial OTU matrix contains ${cat nbsamp_ori} samples and ${cat nbotu_ori} OTUs.
-The normalied matrix used for network calculation now contains ${cat nbsamp} samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
+The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
+The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO.
 EOF
 cat info
 
 # Estimate the correlation thresholds from one random matrix
-cat << EOF > sub_range
+cat > sub_range <<EOF
 #!/bin/bash
 
 #SBATCH -J estimate_range_$i
@@ -136,7 +136,7 @@ Rscript --vanilla $MYSD/rscripts/threshold_range.R
 EOF
 
 # Observed matrix Spearman's rho calculation, then find largest connected component in random network at different thresholds
-cat << EOF > sub_spearman
+cat > sub_spearman <<EOF
 #!/bin/bash
 
 #SBATCH -J spearman_$i
@@ -156,10 +156,10 @@ Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID
 EOF
 
 # find threshold
-cat << EOF > sub_threshold
+cat > sub_threshold <<EOF
 #!/bin/bash
 
-#SBATCH -J $i_threshold
+#SBATCH -J threshold_$i
 #SBATCH -o log.%x.%j.out
 #SBATCH -e log.%x.%j.err
 #SBATCH --open-mode=append
@@ -188,10 +188,10 @@ paste <(seq \$((NEG_TRESH-10)) \$((NEG_TRESH+10)) | awk '{print -\$1/100}') rand
 EOF
 
 # retrieve significant correlations above/below threshold
-cat << EOF > sub_edges
+cat > sub_edges <<EOF
 #!/bin/bash
 
-#SBATCH -J $i_edges
+#SBATCH -J edges_$i
 #SBATCH -a 1-${blocks}
 #SBATCH -o log.%x.%A.out
 #SBATCH -e log.%x.%A.err
@@ -208,10 +208,10 @@ Rscript --vanilla $MYSD/rscripts/edges_p_ex.R \$SLURM_ARRAY_TASK_ID
 EOF
 
 # create the final network in form of an edge list
-cat << EOF > sub_network
+cat > sub_network <<EOF
 #!/bin/bash
 
-#SBATCH -J $i_network
+#SBATCH -J network_$i
 #SBATCH -o log.%x.%j.out
 #SBATCH -e log.%x.%j.err
 #SBATCH -t 12:00:00
@@ -223,7 +223,7 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
-	cat << EOF2>info_start
+	cat > info_start <<EOF2
 		${0##*/}
 		
 		## INPUT ##
@@ -233,7 +233,7 @@ Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
 		The input options are:
 		column -t -s \$'\t' config
 EOF2
-	cat << EOF3>info_end
+	cat > info_end <<EOF3
 		
 		## OUTPUT ##
 		
@@ -258,5 +258,6 @@ echo ""
 echo "The following jobs were submitted to the queue: $jobid_range $jobid_spearman $jobid_threshold $jobid_edges $jobid_network."
 echo "Use <squeue> to view the jobs."
 echo "The output networks will be available in the files cooccurrence.$i.${INPUT%.*}.txt and coexclusion.$i.${INPUT%.*}.txt once the last job will be completed."
+echo ""
 
 cd ..
