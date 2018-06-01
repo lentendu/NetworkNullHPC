@@ -110,8 +110,11 @@ blocks=$(( (pairsize/10000+9)/10 ))
 if [ ${MINOCC:-0.1} -le 1 ]; then MINOCCINFO=" * number of samples" ; fi
 if [ ${MINCOUNT:-0.1} -le 1 ]; then MINCOUNTINFO=" * the median read count" ; fi
 echo ""
-echo "Matrix loaded with ${cat nbsamp_ori} samples and ${cat nbotu_ori} OTUs."
+cat << EOF > info
+echo "The initial OTU matrix contains ${cat nbsamp_ori} samples and ${cat nbotu_ori} OTUs."
 echo "The normalied matrix used for network calculation now contains ${cat nbsamp} samples with a minimum read count of ${MINCOUNT:-0.1}$MINCOUNTINFO and $matzie OTUs with a minimum occurrence of ${MINOCC:-0.1}$MINOCCINFO."
+EOF
+cat info
 
 # Estimate the correlation thresholds from one random matrix
 cat << EOF > sub_range
@@ -217,19 +220,41 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
+	cat << EOF2>info_start
+		${0##*/}
+		
+		## INPUT ##
+		
+		The input matrix is ${INPUT}.
+		
+		The input options are:
+		column -t -s \$'\t' config
+		
+EOF2
+	cat << EOF3>info_end
+		
+		## OUTPUT ##
+		
+		The Spearman's rank correlation threshold was set to \$(cat threshold) for the co-occurrence network.
+		The co-occurrence network contains \${wc -l ../cooccurrence.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+		
+		The Spearman's rank correlation threshold was set to \$(cat ex_threshold) for the co-exclusion network.
+		The co-exclusion network contains \${wc -l ../coexclusion.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+EOF3
+cat info_start info info_end > ../info.NetworkNullHPC.$i.${INPUT%.*}.txt
 EOF
 
 
 # Submit to queue
-jobid_range=$(sbatch --parsable sub_range_$i)
-jobid_spearman=$(sbatch --parsable -d afterok:${jobid_range} sub_spearman_$i)
-jobid_threshold=$(sbatch --parsable -d afterok:${jobid_spearman} sub_threshold_$i)
-jobid_edges=$(sbatch --parsable -d afterok:${jobid_threshold} sub_edges_$i)
-jobid_network=$(sbatch --parsable -d afterok:${jobid_edges} sub_network_$i)
-
-cd ..
+jobid_range=$(sbatch --parsable sub_range)
+jobid_spearman=$(sbatch --parsable -d afterok:${jobid_range} sub_spearman)
+jobid_threshold=$(sbatch --parsable -d afterok:${jobid_spearman} sub_threshold)
+jobid_edges=$(sbatch --parsable -d afterok:${jobid_threshold} sub_edges)
+jobid_network=$(sbatch --parsable -d afterok:${jobid_edges} sub_network)
 
 echo ""
 echo "The following jobs were submitted to the queue: $jobid_range $jobid_spearman $jobid_threshold $jobid_edges $jobid_network."
 echo "Use <squeue> to view the jobs."
 echo "The output networks will be available in the files cooccurrence.$i.${INPUT%.*}.txt and coexclusion.$i.${INPUT%.*}.txt once the last job will be completed."
+
+cd ..
