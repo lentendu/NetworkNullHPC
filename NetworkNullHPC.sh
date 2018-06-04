@@ -118,7 +118,7 @@ Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_ma
 # Calculate number of parallel jobs and the amount of memory and time to request
 matsize=`cat nbotu`
 pairsize=$((matsize*(matsize-1)/2))
-memsize=$((pairsize/5000000+1))
+memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
 cat > info <<EOF
