@@ -16,11 +16,6 @@ net_name<-as.data.frame(t(combn(colnames(mat),2)))
 pos_tresh<-scan("pos_tresh_range",quiet=T)
 neg_tresh<-scan("neg_tresh_range",quiet=T)
 
-# add noise to matrix
-b<-1e-4
-set.seed(seed+12345)
-mat_noise<-mat+(-b+(2*b)*matrix(runif(length(c(mat))),nrow=nrow(mat)))
-
 # randomize the normalize matrix with re-introduced compositionnality, following Faust et al. (2012):
 # first randomize the matrix for each OTU separetedly, re-normalize per sample and add noise
 set.seed(seed+12345)
@@ -31,6 +26,7 @@ if(depth>1) {
   mat_rand_norm<-round(mat_rand*(median(rowSums(mat_rand))*depth/rowSums(mat_rand)))
 }
 set.seed(seed+12345)
+b<-1e-4
 mat_rand_norm_noise<-mat_rand_norm+(-b+(2*b)*matrix(runif(length(c(mat))),nrow=nrow(mat)))
 
 # Spearman's rho

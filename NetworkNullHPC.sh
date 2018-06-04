@@ -230,27 +230,30 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
-	cat > info_start <<EOF2
-		${0##*/}
-		
-		## INPUT ##
-		
-		The input matrix is ${INPUT}.
-		
-		The input options are:
-		column -t -s \$'\t' config
+cat > info_start <<EOF2
+${0##*/}
+
+## INPUT ##
+
+The input matrix is ${INPUT}.
+
+The input options are:
 EOF2
-	cat > info_end <<EOF3
-		
-		## OUTPUT ##
-		
-		The Spearman's rank correlation threshold was set to \$(cat threshold) for the co-occurrence network.
-		The co-occurrence network contains \${wc -l ../cooccurrence.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
-		
-		The Spearman's rank correlation threshold was set to \$(cat ex_threshold) for the co-exclusion network.
-		The co-exclusion network contains \${wc -l ../coexclusion.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+
+cat > info_end <<EOF3
+
+## OUTPUT ##
+
+The Spearman's rank correlation threshold was set to \$(cat threshold) for the co-occurrence network.
+The co-occurrence network contains \${wc -l ../cooccurrence.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+
+The Spearman's rank correlation threshold was set to \$(cat ex_threshold) for the co-exclusion network.
+The co-exclusion network contains \${wc -l ../coexclusion.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+
 EOF3
-cat info_start info info_end > ../info.NetworkNullHPC.$i.${INPUT%.*}.txt
+
+cat info_start <(column -t -s \$'\t' config) info info_end > ../info.NetworkNullHPC.$i.${INPUT%.*}.txt
+
 EOF
 
 
