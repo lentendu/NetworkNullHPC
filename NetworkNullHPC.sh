@@ -150,8 +150,8 @@ cat > sub_spearman <<EOF
 
 #SBATCH -J spearman_$i
 #SBATCH -a 1-$BOOTSTRAP
-#SBATCH -o log.%x.%A.out
-#SBATCH -e log.%x.%A.err
+#SBATCH -o log.%x.out
+#SBATCH -e log.%x.err
 #SBATCH --open-mode=append
 #SBATCH -t $reqtime
 #SBATCH -n 1
@@ -200,8 +200,8 @@ cat > sub_edges <<EOF
 
 #SBATCH -J edges_$i
 #SBATCH -a 1-${blocks}
-#SBATCH -o log.%x.%A.out
-#SBATCH -e log.%x.%A.err
+#SBATCH -o log.%x.out
+#SBATCH -e log.%x.err
 #SBATCH --open-mode=append
 #SBATCH -t 06:00:00
 #SBATCH -n 1
