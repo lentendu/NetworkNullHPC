@@ -186,11 +186,11 @@ paste paste_cc_ex_{1..$BOOTSTRAP..20} > ../rand_cc_ex
 rm paste_cc_[0-9]*
 rm paste_cc_ex_[0-9]*
 cd ..
-# at which threshold the largest connected component contain less than 1% of total OTU number in 95 % of the random matrices?
+# at which threshold the largest connected component contain less than 1% of total OTU number in at least 90 % of the random matrices?
 POS_TRESH=\$(awk '{print \$1*100}' pos_tresh_range)
-paste <(seq \$((POS_TRESH-5)) \$((POS_TRESH+15)) | awk '{print \$1/100}') rand_cc | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.95){print \$1;exit}}' > threshold
+paste <(seq \$((POS_TRESH-5)) \$((POS_TRESH+15)) | awk '{print \$1/100}') rand_cc | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > threshold
 NEG_TRESH=\$(awk '{print \$1*100}' neg_tresh_range)
-paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk -v '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.95){print \$1;exit}}' > ex_threshold
+paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk -v '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > ex_threshold
 
 EOF
 
