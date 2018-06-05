@@ -23,11 +23,6 @@ h5createFile("net_name.h5")
 h5createDataset("net_name.h5","name",c(1e5,blocks),storage.mode="character",size=name_length*2+2,chunk=c(1e5,1),level=6)
 h5write(full_net_name,file="net_name.h5",name="name")
 
-# add noise to matrix
-seed<-1
-set.seed(seed+12345)
-mat_noise<-mat+(-b+(2*b)*matrix(runif(length(c(mat))),nrow=nrow(mat)))
-
 # randomize the normalize matrix
 if(is.numeric(nullm)) {
   if(nullm==0) {
