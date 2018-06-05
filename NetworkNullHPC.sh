@@ -22,6 +22,9 @@ DESCRIPTION
 	-d expected_depth
 		Expected sequencing depth to normalize read counts. Default: 0.5 * median read count. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
+	-n null_model
+		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among OTUs (1), constrained among sample (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 2
+	
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
 	
@@ -49,9 +52,10 @@ BOOTSTRAP=1000
 DEPTH=0.5
 MINOCC=0.1
 MINCOUNT=0.1
+NULLM=2
 
 # get options
-while getopts ":a:b:d:ho:r:" opt
+while getopts ":a:b:d:hn:o:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -59,6 +63,7 @@ do
 		a)	SLURMACCOUNT=$(echo "#SBATCH -A $OPTARG");;
 		b)	BOOTSTRAP=$OPTARG;;
 		d)	DEPTH=$OPTARG;;
+		n)	NULLM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
 		r)	MINCOUNT=$OPTARG;;
 		c)	CLEAN=no;;
@@ -103,11 +108,11 @@ then
 fi
 
 # Prepare directories and configuration file
-OPTIONS=($i $FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT)
+OPTIONS=($i $FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM)
 i=$(cat <(echo ${OPTIONS[@]}) $FULLINPUT | cksum | awk '{print $1}')
 mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(cksum mat nboot depth minocc mincount) <(echo ${OPTIONS[@]}) | tr " " "\t" > config
+cat <(cksum mat nboot depth minocc mincount nullm) <(echo ${OPTIONS[@]}) | tr " " "\t" > config
 
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err

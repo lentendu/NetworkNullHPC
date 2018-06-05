@@ -1,4 +1,4 @@
-suppressMessages(library(plyr))
+ suppressMessages(library(plyr))
 suppressMessages(library(Hmisc))
 suppressMessages(library(igraph,quietly=T))
 
@@ -16,17 +16,31 @@ net_name<-as.data.frame(t(combn(colnames(mat),2)))
 pos_tresh<-scan("pos_tresh_range",quiet=T)
 neg_tresh<-scan("neg_tresh_range",quiet=T)
 
-# randomize the normalize matrix with re-introduced compositionnality, following Faust et al. (2012):
-# first randomize the matrix for each OTU separetedly, re-normalize per sample and add noise
-set.seed(seed+12345)
-mat_rand<-apply(mat,2,sample)
-if(depth>1) {
-  mat_rand_norm<-round(mat_rand*(depth/rowSums(mat_rand)))
-} else {
-  mat_rand_norm<-round(mat_rand*(median(rowSums(mat_rand))*depth/rowSums(mat_rand)))
+# randomize the normalize matrix
+if(is.numeric(nullm)) {
+  if(nullm==0) {
+    set.seed(seed+12345); mat_rand<-matrix(sample(c(mat)),nrow=nrow(mat))
+  } else {
+    set.seed(seed+12345); mat_rand<-apply(mat,nullm,sample)
+  }
+} else{
+  set.seed(seed+12345); mat_rand<-permatfull(mat,fixedmar=nullm,times=1)$perm[[1]]
 }
-set.seed(seed+12345)
+
+# re-normalize per sample if necessary
+if(sd(rowSums(mat))>1) {
+  if(depth>1) {
+    mat_rand_norm<-round(mat_rand*(depth/rowSums(mat_rand)))
+  } else {
+    mat_rand_norm<-round(mat_rand*(median(rowSums(mat_rand))*depth/rowSums(mat_rand)))
+  }
+} else {
+  mat_rand_norm<-mat_rand
+}
+
+# add noise
 b<-1e-4
+set.seed(seed+12345)
 mat_rand_norm_noise<-mat_rand_norm+(-b+(2*b)*matrix(runif(length(c(mat))),nrow=nrow(mat)))
 
 # Spearman's rho
