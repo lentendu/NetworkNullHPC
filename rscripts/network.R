@@ -20,8 +20,8 @@ edges_ex_ok_signif<-parLapply(cl,files_ex,function(i) {readRDS(file.path("spearm
 stopCluster(cl)
 
 # network
-if(length(edges_ok_signif)>0) {
-  otus<-scan("otus",quiet=T)
+if(length(unlist(edges_ok_signif))>0) {
+  otus<-scan("otus",what="character",quiet=T)
   net_name<-foreach(i=1:blocks,.combine=c) %do% {
     h5read("net_name.h5","name",index=list(edges_ok_signif[[i]],i))
   }
@@ -30,7 +30,7 @@ if(length(edges_ok_signif)>0) {
   quit(save="no",status=1,runLast=F)
 }
 
-if(length(edges_ok_signif)>0) {
+if(length(unlist(edges_ex_ok_signif))>0) {
   net_ex_name<-foreach(i=1:blocks,.combine=c) %do% {
     h5read(paste0(project,"net_name.h5"),"name",index=list(edges_ex_ok_signif[[i]],i))
   }

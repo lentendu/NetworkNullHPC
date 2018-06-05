@@ -275,15 +275,22 @@ The input matrix is ${INPUT}.
 The input options are:
 EOF2
 
+COOCT=\$(cat threshold)
+COOCE=\$(wc -l ../cooccurrence.$MYCK.${INPUT%.*}.txt)
+COOCN=\$(cut -d " " -f 1-2 ../cooccurrence.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
+COEXT=\$(cat ex_threshold)
+COEXE=\$(wc -l ../coexclusion.$MYCK.${INPUT%.*}.txt)
+COEXN=\$(cut -d " " -f 1-2 ../coexclusion.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
+
 cat > info_end <<EOF3
 
 ## OUTPUT ##
 
-The Spearman's rank correlation threshold was set to \$(cat threshold) for the co-occurrence network.
-The co-occurrence network contains \${wc -l ../cooccurrence.$MYCK.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+The Spearman's rank correlation threshold was set to \$COOCT for the co-occurrence network.
+The co-occurrence network contains \$COOCE edges involving \$COOCN OTUs.
 
-The Spearman's rank correlation threshold was set to \$(cat ex_threshold) for the co-exclusion network.
-The co-exclusion network contains \${wc -l ../coexclusion.$MYCK.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+The Spearman's rank correlation threshold was set to \$COEX for the co-exclusion network.
+The co-exclusion network contains \$COEXE edges involving \$COEXN OTUs.
 
 EOF3
 
