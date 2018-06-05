@@ -110,9 +110,16 @@ fi
 # Prepare directories and configuration file
 OPTIONS=($i $FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM)
 i=$(cat <(echo ${OPTIONS[@]}) $FULLINPUT | cksum | awk '{print $1}')
+if [ -d "NetworkNull.$i" ]
+then
+	echo "${0##*/} was already executed on the same input matrix $INPUT with the same options."
+	echo "Check outputs with the label $i."
+	echo "Aborting"
+	exit 1
+fi
 mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(cksum mat nboot depth minocc mincount nullm) <(echo ${OPTIONS[@]}) | tr " " "\t" > config
+cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo ${OPTIONS[@]}) | tr " " "\t" > config
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
