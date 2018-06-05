@@ -23,7 +23,7 @@ DESCRIPTION
 		Expected sequencing depth to normalize read counts. Default: 0.5 * median read count. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
 	-n null_model
-		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among OTUs (1), constrained among sample (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 2
+		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among samples (1), constrained among OTUs (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 2
 	
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
