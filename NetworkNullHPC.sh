@@ -227,6 +227,7 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
+
 cat > info_start <<EOF2
 ${0##*/}
 

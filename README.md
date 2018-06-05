@@ -1,4 +1,5 @@
 NetworkNullHPC re-implements in R and bash the OTU co-occurrence network inferrence method developped by Connor, Barberàn and Clauset (2017) and use the SLURM job scheduler to parallelize the computations.
+The method is generalized to negative correlations in order to assess both co-occurrence and co-exclusion.
 
 INSTALLATION
 ------------
