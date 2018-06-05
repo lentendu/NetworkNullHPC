@@ -114,6 +114,30 @@ mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 cat <(cksum mat nboot depth minocc mincount nullm) <(echo ${OPTIONS[@]}) | tr " " "\t" > config
 
+# check previous computation(s) and symlink spearman's rho of observed matrix if identical
+md5sum $FULLINPUT > md5input
+for i in ../NetworkNull.*
+do
+	if [ "$(basename $i)" != "$(basename $PWD)" ]
+	then
+		TEST=$(cut -d " " -f 1 $i/md5input | paste - <(echo $FULLINPUT) | md5sum -c --quiet 2> /dev/null)
+	fi
+	if [ -z "$TEST" ]
+	then
+		PREV=$(readlink -f $i)
+		PREVBOOT=$(cut -f 3 $PREV/config | sed -n '2p')
+		PREVDEPTH=$(cut -f 4 $PREV/config | sed -n '2p')
+		if [ "$PREVBOOT" == "$(ls $PREV/spearman_noise_r/[0-9]*.h5 | wc -l)" ] && [ "$PREVDEPTH" == "$DEPTH" ]
+		then
+			ln -s $PREV/spearman_noise_r/[0-9]*.h5 $PWD/spearman_noise_r
+			ln -s $PREV/spearman_noise_p/[0-9]*.h5 $PWD/spearman_noise_p
+			INFOPREV="Spearman's correlations of the observed matrix $INPUT were already calculated in a previous execution (${PREV##*/}), these calculations will be skipped here."
+			PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
+			break
+		fi
+	fi
+done
+
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
@@ -161,7 +185,7 @@ cat > sub_spearman <<EOF
 $SLURMACCOUNT
 
 module load $RMODULE
-Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID
+$PREVSPEAR
 Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID
 
 EOF
