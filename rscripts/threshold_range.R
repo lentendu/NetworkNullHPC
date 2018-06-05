@@ -1,3 +1,4 @@
+suppressMessages(library(vegan))
 suppressMessages(library(foreach))
 suppressMessages(library(Hmisc))
 suppressMessages(library(igraph,quietly=T))

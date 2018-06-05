@@ -1,4 +1,5 @@
- suppressMessages(library(plyr))
+suppressMessages(library(vegan))
+suppressMessages(library(plyr))
 suppressMessages(library(Hmisc))
 suppressMessages(library(igraph,quietly=T))
 
