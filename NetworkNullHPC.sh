@@ -123,6 +123,7 @@ cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTION
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
+PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
 for i in ../NetworkNull.*
 do
 	if [ "$(basename $i)" != "$(basename $PWD)" ]
@@ -138,7 +139,7 @@ do
 				ln -s $PREV/spearman_noise_r/[0-9]*.h5 $PWD/spearman_noise_r
 				ln -s $PREV/spearman_noise_p/[0-9]*.h5 $PWD/spearman_noise_p
 				INFOPREV="Spearman's correlations of the observed matrix $INPUT were already calculated in a previous execution (${PREV##*/}), these calculations will be skipped here."
-				PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
+				unset PREVSPEAR
 				break
 			fi
 		fi
