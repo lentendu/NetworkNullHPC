@@ -109,17 +109,17 @@ fi
 
 # Prepare directories and configuration file
 OPTIONS=("$FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM")
-i=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
-if [ -d "NetworkNull.$i" ]
+MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
+if [ -d "NetworkNull.$MYCK" ]
 then
 	echo "${0##*/} was already executed on the same input matrix $INPUT with the same options."
-	echo "Check outputs with the label $i."
+	echo "Check outputs with the label $MYCK."
 	echo "Aborting"
 	exit 1
 fi
-mkdir NetworkNull.$i && cd NetworkNull.$i
+mkdir NetworkNull.$MYCK && cd NetworkNull.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo "$i ${OPTIONS[@]}") | tr " " "\t" > config
+cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
@@ -165,7 +165,7 @@ cat info
 cat > sub_range <<EOF
 #!/bin/bash
 
-#SBATCH -J estimate_range_$i
+#SBATCH -J estimate_range_$MYCK
 #SBATCH -o log.estimate_range.%j.out
 #SBATCH -e log.estimate_range.%j.err
 #SBATCH -t $reqtime
@@ -181,7 +181,7 @@ EOF
 cat > sub_spearman <<EOF
 #!/bin/bash
 
-#SBATCH -J spearman_$i
+#SBATCH -J spearman_$MYCK
 #SBATCH -a 1-$BOOTSTRAP
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
@@ -201,7 +201,7 @@ EOF
 cat > sub_threshold <<EOF
 #!/bin/bash
 
-#SBATCH -J threshold_$i
+#SBATCH -J threshold_$MYCK
 #SBATCH -o log.%j.out
 #SBATCH -e log.%j.err
 #SBATCH -t 01:00:00
@@ -231,7 +231,7 @@ EOF
 cat > sub_edges <<EOF
 #!/bin/bash
 
-#SBATCH -J edges_$i
+#SBATCH -J edges_$MYCK
 #SBATCH -a 1-${blocks}
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
@@ -251,7 +251,7 @@ EOF
 cat > sub_network <<EOF
 #!/bin/bash
 
-#SBATCH -J network_$i
+#SBATCH -J network_$MYCK
 #SBATCH -o log.%j.out
 #SBATCH -e log.%j.err
 #SBATCH -t 12:00:00
@@ -262,7 +262,7 @@ cat > sub_network <<EOF
 $SLURMACCOUNT
 
 module load $RMODULE
-Rscript --vanilla $MYSD/rscripts/network.R $i \$SLURM_CPUS_PER_TASK ${blocks}
+Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
 
 cat > info_start <<EOF2
 ${0##*/}
@@ -279,14 +279,14 @@ cat > info_end <<EOF3
 ## OUTPUT ##
 
 The Spearman's rank correlation threshold was set to \$(cat threshold) for the co-occurrence network.
-The co-occurrence network contains \${wc -l ../cooccurrence.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+The co-occurrence network contains \${wc -l ../cooccurrence.$MYCK.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../cooccurrence.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
 
 The Spearman's rank correlation threshold was set to \$(cat ex_threshold) for the co-exclusion network.
-The co-exclusion network contains \${wc -l ../coexclusion.$i.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$i.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
+The co-exclusion network contains \${wc -l ../coexclusion.$MYCK.${INPUT%.*}.txt} edges involving \${cut -d " " -f 1-2 ../coexclusion.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l} OTUs.
 
 EOF3
 
-cat info_start <(column -t -s \$'\t' config) info info_end > ../info.NetworkNullHPC.$i.${INPUT%.*}.txt
+cat info_start <(column -t -s \$'\t' config) info info_end > ../info.NetworkNullHPC.$MYCK.${INPUT%.*}.txt
 
 EOF
 
@@ -301,7 +301,7 @@ jobid_network=$(sbatch --parsable -d afterok:${jobid_edges} sub_network)
 echo ""
 echo "The following jobs were submitted to the queue: $jobid_range $jobid_spearman $jobid_threshold $jobid_edges $jobid_network."
 echo "Use <squeue> to view the jobs."
-echo "The output networks will be available in the files cooccurrence.$i.${INPUT%.*}.txt and coexclusion.$i.${INPUT%.*}.txt once the last job will be completed."
+echo "The output networks will be available in the files cooccurrence.$MYCK.${INPUT%.*}.txt and coexclusion.$MYCK.${INPUT%.*}.txt once the last job will be completed."
 echo ""
 
 cd ..
