@@ -264,7 +264,10 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
-
+if  [ $? != 0 ]; then
+	echo "One of the two network is empty, exiting."
+	exit 1
+fi
 cat > info_start <<EOF2
 ${0##*/}
 
@@ -289,7 +292,7 @@ cat > info_end <<EOF3
 The Spearman's rank correlation threshold was set to \$COOCT for the co-occurrence network.
 The co-occurrence network contains \$COOCE edges involving \$COOCN OTUs.
 
-The Spearman's rank correlation threshold was set to \$COEX for the co-exclusion network.
+The Spearman's rank correlation threshold was set to \$COEXT for the co-exclusion network.
 The co-exclusion network contains \$COEXE edges involving \$COEXN OTUs.
 
 EOF3
