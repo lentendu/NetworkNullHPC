@@ -110,21 +110,21 @@ fi
 # Prepare directories and configuration file
 OPTIONS=("$FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM")
 MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
-if [ -d "NetworkNull.$MYCK" ]
+if [ -d "NetworkNullHPC.$MYCK" ]
 then
 	echo "${0##*/} was already executed on the same input matrix $INPUT with the same options."
 	echo "Check outputs with the label $MYCK."
 	echo "Aborting"
 	exit 1
 fi
-mkdir NetworkNull.$MYCK && cd NetworkNull.$MYCK
+mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
 PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
-for i in ../NetworkNull.*
+for i in ../NetworkNullHPC.*
 do
 	if [ "$(basename $i)" != "$(basename $PWD)" ]
 	then
@@ -264,8 +264,14 @@ $SLURMACCOUNT
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
-if  [ $? != 0 ]; then
-	echo "One of the two network is empty, exiting."
+REXIT=\$?
+if [ \$REXIT == 1 ]
+then
+	echo "The co-occurrence network is empty, exiting."
+	exit 1
+elif [ \$REXIT == 2 ]
+then
+	echo "The co-exclusion network is empty, exiting."
 	exit 1
 fi
 cat > info_start <<EOF2
