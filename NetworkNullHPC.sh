@@ -103,14 +103,11 @@ then
 fi
 
 # Prepare directories and configuration file
-i=$(cat <(date +%s) $FULLINPUT | cksum | awk '{print $1}')
+OPTIONS=($i $FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT)
+i=$(cat <(echo ${OPTIONS[@]}) $FULLINPUT | cksum | awk '{print $1}')
 mkdir NetworkNull.$i && cd NetworkNull.$i
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-TAB=$'\t'
-cat > config <<EOF
-cksum${TAB}mat${TAB}nboot${TAB}depth${TAB}minocc${TAB}mincount
-$i${TAB}$FULLINPUT${TAB}$BOOTSTRAP${TAB}$DEPTH${TAB}$MINOCC${TAB}$MINCOUNT
-EOF
+cat <(cksum mat nboot depth minocc mincount) <(echo ${OPTIONS[@]}) | tr " " "\t" > config
 
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
@@ -190,7 +187,7 @@ cd ..
 POS_TRESH=\$(awk '{print \$1*100}' pos_tresh_range)
 paste <(seq \$((POS_TRESH-5)) \$((POS_TRESH+15)) | awk '{print \$1/100}') rand_cc | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > threshold
 NEG_TRESH=\$(awk '{print \$1*100}' neg_tresh_range)
-paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk -v '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > ex_threshold
+paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > ex_threshold
 
 EOF
 
