@@ -24,6 +24,7 @@ h5createDataset("net_name.h5","name",c(1e5,blocks),storage.mode="character",size
 h5write(full_net_name,file="net_name.h5",name="name")
 
 # randomize the normalize matrix
+seed<-1
 if(is.numeric(nullm)) {
   if(nullm==0) {
     set.seed(seed+12345); mat_rand<-matrix(sample(c(mat)),nrow=nrow(mat))
