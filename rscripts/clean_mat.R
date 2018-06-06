@@ -1,12 +1,12 @@
+library(rhdf5)
+library(vegan)
+library(Hmisc)
+library(igraph)
 library(plyr)
 library(tidyr)
 library(dplyr)
-library(vegan)
 library(foreach)
 library(doParallel)
-library(rhdf5)
-library(Hmisc)
-library(igraph)
 
 # read options
 config<-read.table("config",h=T,as.is=2)
