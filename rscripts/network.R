@@ -28,7 +28,7 @@ if(length(unlist(edges_ok_signif))>0) {
   net_edges<-ldply(net_name,function(x) otus[as.numeric(unlist(sub("^0*","",unlist(strsplit(x,"-")))))])
   write.table(net_edges,file.path("..",paste("cooccurrence",config$cksum,sub("\\.[^\\.]*$","",basename(config$mat)),"txt",sep=".")),col.names=F,row.names=F,sep=" ",quote=F)
 } else {
-  quit(save="no",status=1,runLast=F)
+  quit(save="no",status=2,runLast=F)
 }
 
 if(length(unlist(edges_ex_ok_signif))>0) {
@@ -38,5 +38,5 @@ if(length(unlist(edges_ex_ok_signif))>0) {
   net_ex_edges<-ldply(net_ex_name,function(x) otus[as.numeric(unlist(sub("^0*","",unlist(strsplit(x,"-")))))])
   write.table(net_ex_edges,file.path("..",paste("coexclusion",config$cksum,sub("\\.[^\\.]*$","",basename(config$mat)),"txt",sep=".")),col.names=F,row.names=F,sep=" ",quote=F)
 } else {
-  quit(save="no",status=2,runLast=F)
+  quit(save="no",status=3,runLast=F)
 }

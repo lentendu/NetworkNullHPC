@@ -265,13 +265,16 @@ $SLURMACCOUNT
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
 REXIT=\$?
-if [ \$REXIT == 1 ]
+if [ \$REXIT == 2 ]
 then
 	echo "The co-occurrence network is empty, exiting."
 	exit 1
-elif [ \$REXIT == 2 ]
+elif [ \$REXIT == 3 ]
 then
 	echo "The co-exclusion network is empty, exiting."
+	exit 1
+elif [ \$REXIT == 1 ]
+	echo "Error during network step, exiting"
 	exit 1
 fi
 cat > info_start <<EOF2
