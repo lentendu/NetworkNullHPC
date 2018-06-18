@@ -55,7 +55,7 @@ write(minc,"mincount")
 
 # Environmental table check and export
 if ( ! is.na(config$env)) {
-	env<-read.table(config$env,h=T)
+	env<-read.table(file.path(config$env),h=T)
 	if ( nrow(env) != nrow(mat) ) {
 		quit(save="no",status=2,runLast=F)
 	}
