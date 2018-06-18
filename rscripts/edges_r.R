@@ -8,7 +8,7 @@ threshold_ex<-scan("ex_threshold",quiet=T)
 
 # read options
 config<-read.table("config",h=T,as.is=2)
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # Read Spearman's rho from noise added matrix (one block at a time)
 edges<-foreach(i=1:nboot,.combine=cbind) %do% {

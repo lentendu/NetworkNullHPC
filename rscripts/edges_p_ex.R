@@ -6,7 +6,7 @@ block<-as.numeric(commandArgs()[7])
 
 # read options
 config<-read.table("config",h=T,as.is=2)
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # get p.values of edges above threshold
 edges_ex_ok<-readRDS(file.path("spearman_noise_r",paste0("edges_ex_",block)))

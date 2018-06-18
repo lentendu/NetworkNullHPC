@@ -8,7 +8,7 @@ blocks<-as.numeric(commandArgs()[8])
 
 # read options
 config<-read.table("config",h=T,as.is=2)
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # load edges
 files<-paste("edges",1:blocks,sep="_")

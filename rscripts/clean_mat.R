@@ -17,7 +17,7 @@ if(nrow(mat)>ncol(mat)) {
 }
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # Drop samples with too few reads
 if(mincount>1) {
@@ -52,3 +52,21 @@ otus<-colnames(mat_norm)
 write(otus,"otus",ncolumns=1)
 write(mino,"minocc")
 write(minc,"mincount")
+
+# Environmental table check and export
+if ( ! is.na(config$env)) {
+	env<-read.table(config$env,h=T)
+	if ( nrow(env) != nrow(mat) ) {
+		quit(save="no",status=2,runLast=F)
+	}
+	if ( ! all(apply(env,2,is.numeric)) ) {
+		quit(save="no",status=3,runLast=F)
+	}
+	env_ab<-env[rownames(mat_ab),]
+	if( nrow(env_ab) != nrow(mat_ab) ) {
+		quit(save="no",status=4,runLast=F)
+	}
+	saveRDS(as.matrix(env_ab),"env")
+	write(ncol(env_ab),"nbenv")
+}
+
