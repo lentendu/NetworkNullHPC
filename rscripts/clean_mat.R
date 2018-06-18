@@ -49,7 +49,6 @@ saveRDS(as.matrix(mat_norm),"mat")
 write(nrow(mat_norm),"nbsamp")
 write(ncol(mat_norm),"nbotu")
 otus<-colnames(mat_norm)
-write(otus,"otus",ncolumns=1)
 write(mino,"minocc")
 write(minc,"mincount")
 
@@ -68,5 +67,8 @@ if ( ! is.na(config$env)) {
 	}
 	saveRDS(as.matrix(env_ab),"env")
 	write(ncol(env_ab),"nbenv")
+	write(c(otus,colnames(env_ab)),"otus",ncolumns=1)
+} else {
+	write(otus,"otus",ncolumns=1)
 }
 
