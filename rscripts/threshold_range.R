@@ -10,7 +10,6 @@ for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # load normalize matrix 
 mat<-readRDS("mat")
-size<-ncol(mat)*(ncol(mat)-1)/2
 net_name<-t(combn(colnames(mat),2))
 
 # randomize the normalize matrix
@@ -77,9 +76,11 @@ write(neg_tresh,"neg_tresh_range")
 if ( ! is.na(config$env)) {
 	env<-readRDS("env")
 	mat<-cbind(mat,env)
+	net_name<-t(combn(colnames(mat),2))
 }
 
 # prepare spearman's rho storage
+size<-ncol(mat)*(ncol(mat)-1)/2
 blocks<-ceiling(size/1e5)
 otusnum<-seq(1,ncol(mat))
 name_length<-nchar(tail(otusnum,1))
