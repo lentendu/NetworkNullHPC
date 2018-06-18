@@ -75,7 +75,7 @@ write(neg_tresh,"neg_tresh_range")
 
 # append environmental parameters to normalize matrix if necessary
 if ( ! is.na(config$env)) {
-	env<-readRDS(env)
+	env<-readRDS("env")
 	mat<-cbind(mat,env)
 }
 

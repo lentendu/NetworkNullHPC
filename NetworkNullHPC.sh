@@ -202,8 +202,8 @@ cat > sub_range <<EOF
 #!/bin/bash
 
 #SBATCH -J range_$MYCK
-#SBATCH -o log.estimate_range.%j.out
-#SBATCH -e log.estimate_range.%j.err
+#SBATCH -o log.range.%j.out
+#SBATCH -e log.range.%j.err
 #SBATCH -t $reqtime
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT

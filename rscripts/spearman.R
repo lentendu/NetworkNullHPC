@@ -12,7 +12,7 @@ mat<-readRDS("mat")
 
 # append environmental parameters if necessary
 if ( ! is.na(config$env)) {
-	env<-readRDS(env)
+	env<-readRDS("env")
 	mat<-cbind(mat,env)
 }
 
