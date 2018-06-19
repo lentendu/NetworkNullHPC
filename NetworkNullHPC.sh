@@ -126,31 +126,6 @@ mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
 cat <(echo "cksum mat env nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
 
-# check previous computation(s) and symlink spearman's rho of observed matrix if identical
-md5sum $FULLINPUT > md5input
-PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
-for i in ../NetworkNullHPC.*
-do
-	if [ "$(basename $i)" != "$(basename $PWD)" ]
-	then
-		TEST=$(cut -d " " -f 1 $i/md5input | paste - <(echo $FULLINPUT) | md5sum -c --quiet 2> /dev/null)
-		if [ -z "$TEST" ]
-		then
-			PREV=$(readlink -f $i)
-			PREVBOOT=$(cut -f 3 $PREV/config | sed -n '2p')
-			PREVDEPTH=$(cut -f 4 $PREV/config | sed -n '2p')
-			if [ "$PREVBOOT" == "$(ls $PREV/spearman_noise_r/[0-9]*.h5 | wc -l)" ] && [ "$PREVDEPTH" == "$DEPTH" ]
-			then
-				ln -s $PREV/spearman_noise_r/[0-9]*.h5 $PWD/spearman_noise_r
-				ln -s $PREV/spearman_noise_p/[0-9]*.h5 $PWD/spearman_noise_p
-				INFOPREV="Spearman's correlations of the observed matrix $INPUT were already calculated in a previous execution (${PREV##*/}), these calculations will be skipped here."
-				unset PREVSPEAR
-				break
-			fi
-		fi
-	fi
-done
-
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
@@ -183,10 +158,57 @@ pairsize=$((matsize*(matsize-1)/2))
 memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
+if [ $((reqtime*2)) -ge 60 ]
+then
+	array=1-$BOOTSTRAP
+	reqtime2=$reqtime
+	PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
+	NULLSPEAR="Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID"
+else
+	step=$((60/reqtime))
+	seqlen=$(seq 1 $step $BOOTSTRAP | sed -n '$=')
+	if [ $seqlen -lt 16 ]
+	then
+		step=$(awk -v B=$BOOTSTRAP 'BEGIN{s=B/16;if(s!=int(s)){print int(s)+1} else print s}')
+	fi
+	array=1-${BOOTSTRAP}:${step}
+	reqtime2=$((reqtime*step))
+	MAXSEQ="maxseq=\$(if [ \$((SLURM_ARRAY_TASK_ID + $step)) -gt $BOOTSTRAP ] ; then echo $BOOTSTRAP ; else echo \$((SLURM_ARRAY_TASK_ID+$step-1)) ; fi )"
+	PREVSPEAR="for i in \$(seq \$SLURM_ARRAY_TASK_ID \$maxseq); do Rscript --vanilla $MYSD/rscripts/spearman.R \$i ; done"
+	NULLSPEAR="for i in \$(seq \$SLURM_ARRAY_TASK_ID \$maxseq); do Rscript --vanilla $MYSD/rscripts/rand_network.R \$i ; done"
+fi
+
+# check previous computation(s) and symlink spearman's rho of observed matrix if identical
+md5sum $FULLINPUT > md5input
+for i in ../NetworkNullHPC.*
+do
+	if [ "$(basename $i)" != "$(basename $PWD)" ]
+	then
+		TEST=$(cut -d " " -f 1 $i/md5input | paste - <(echo $FULLINPUT) | md5sum -c --quiet 2> /dev/null)
+		if [ -z "$TEST" ]
+		then
+			PREV=$(readlink -f $i)
+			PREVBOOT=$(cut -f 3 $PREV/config | sed -n '2p')
+			PREVDEPTH=$(cut -f 4 $PREV/config | sed -n '2p')
+			if [ "$PREVBOOT" == "$(ls $PREV/spearman_noise_r/[0-9]*.h5 | wc -l)" ] && [ "$PREVDEPTH" == "$DEPTH" ]
+			then
+				ln -s $PREV/spearman_noise_r/[0-9]*.h5 $PWD/spearman_noise_r
+				ln -s $PREV/spearman_noise_p/[0-9]*.h5 $PWD/spearman_noise_p
+				INFOPREV="Spearman's correlations of the observed matrix $INPUT were already calculated in a previous execution (${PREV##*/}), these calculations will be skipped here."
+				unset PREVSPEAR
+				break
+			fi
+		fi
+	fi
+done
+
+
+# Print infos
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
 The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
+$INFOPREV
 EOF
 if [ $ENVMAT != "NA" ]
 then
@@ -218,18 +240,19 @@ cat > sub_spearman <<EOF
 #!/bin/bash
 
 #SBATCH -J spearman_$MYCK
-#SBATCH -a 1-$BOOTSTRAP
+#SBATCH -a $array
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
 #SBATCH --open-mode=append
-#SBATCH -t $reqtime
+#SBATCH -t $reqtime2
 #SBATCH -n 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 
 module load $RMODULE
+$MAXSEQ
 $PREVSPEAR
-Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID
+$NULLSPEAR
 
 EOF
 
