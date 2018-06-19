@@ -332,6 +332,7 @@ then
 	echo "The co-exclusion network is empty, exiting."
 	exit 1
 elif [ \$REXIT == 1 ]
+then
 	echo "Error during network step, exiting"
 	exit 1
 fi
