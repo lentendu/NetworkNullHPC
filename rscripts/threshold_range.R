@@ -6,22 +6,11 @@ suppressMessages(library(rhdf5))
 
 # read options
 config<-read.table("config",h=T,as.is=2)
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # load normalize matrix 
 mat<-readRDS("mat")
-size<-ncol(mat)*(ncol(mat)-1)/2
 net_name<-t(combn(colnames(mat),2))
-
-# prepare spearman's rho storage
-blocks<-ceiling(size/1e5)
-otusnum<-seq(1,ncol(mat))
-name_length<-nchar(tail(otusnum,1))
-pair_names<-combn(sprintf(paste0("%0",name_length,"d"),otusnum),2)
-full_net_name<-matrix(c(paste(pair_names[1,],pair_names[2,],sep="-"),rep(NA,ceiling(size/1e5)*1e5-size)),nrow=1e5)
-h5createFile("net_name.h5")
-h5createDataset("net_name.h5","name",c(1e5,blocks),storage.mode="character",size=name_length*2+2,chunk=c(1e5,1),level=6)
-h5write(full_net_name,file="net_name.h5",name="name")
 
 # randomize the normalize matrix
 seed<-1
@@ -36,7 +25,7 @@ if(is.numeric(nullm)) {
 }
 
 # re-normalize per sample if necessary
-if(sd(rowSums(mat))>1) {
+if(sd(rowSums(mat))>1/ncol(mat_rand)) {
   if(depth>1) {
     mat_rand_norm<-round(mat_rand*(depth/rowSums(mat_rand)))
   } else {
@@ -82,3 +71,21 @@ for(i in seq(-0.9,-0.2,0.01)) {
 
 write(pos_tresh,"pos_tresh_range")
 write(neg_tresh,"neg_tresh_range")
+
+# append environmental parameters to normalize matrix if necessary
+if ( ! is.na(config$env)) {
+	env<-readRDS("env")
+	mat<-cbind(mat,env)
+	net_name<-t(combn(colnames(mat),2))
+}
+
+# prepare spearman's rho storage
+size<-ncol(mat)*(ncol(mat)-1)/2
+blocks<-ceiling(size/1e5)
+otusnum<-seq(1,ncol(mat))
+name_length<-nchar(tail(otusnum,1))
+pair_names<-combn(sprintf(paste0("%0",name_length,"d"),otusnum),2)
+full_net_name<-matrix(c(paste(pair_names[1,],pair_names[2,],sep="-"),rep(NA,ceiling(size/1e5)*1e5-size)),nrow=1e5)
+h5createFile("net_name.h5")
+h5createDataset("net_name.h5","name",c(1e5,blocks),storage.mode="character",size=name_length*2+2,chunk=c(1e5,1),level=6)
+h5write(full_net_name,file="net_name.h5",name="name")

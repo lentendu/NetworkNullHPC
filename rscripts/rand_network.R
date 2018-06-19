@@ -8,7 +8,7 @@ seed<-as.numeric(commandArgs()[7])
 
 # Read options
 config<-read.table("config",h=T,as.is=1)
-for (i in 3:ncol(config)){assign(names(config)[i],config[1,i])}
+for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # load normalize matrix 
 mat<-readRDS("mat")

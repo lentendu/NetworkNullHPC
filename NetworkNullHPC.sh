@@ -22,6 +22,9 @@ DESCRIPTION
 	-d expected_depth
 		Expected sequencing depth to normalize read counts. Default: 0.5 * median read count. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
+	-e environmental_parameters
+		[EXPERIMENTAL OPTION!] Environmental parameter table in Tab separeted format, with parameters as column and samples as rows. The first column have to contain identical sample names as in the OTU table, the first row contains the parameter names (and thus contain one field less). This will include the environmental parameters in the observed matrix Spearman's correlation calculations and include them in the final networks.
+	
 	-n null_model
 		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among samples (1), constrained among OTUs (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 0
 	
@@ -50,12 +53,13 @@ EOF
 #set default options
 BOOTSTRAP=1000
 DEPTH=0.5
+ENVMAT="NA"
 MINOCC=0.1
 MINCOUNT=0.1
 NULLM=0
 
 # get options
-while getopts ":a:b:d:hn:o:r:" opt
+while getopts ":a:b:d:e:hn:o:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -63,6 +67,7 @@ do
 		a)	SLURMACCOUNT=$(echo "#SBATCH -A $OPTARG");;
 		b)	BOOTSTRAP=$OPTARG;;
 		d)	DEPTH=$OPTARG;;
+		e)	ENVMAT=$(readlink -f $OPTARG);;
 		n)	NULLM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
 		r)	MINCOUNT=$OPTARG;;
@@ -108,7 +113,7 @@ then
 fi
 
 # Prepare directories and configuration file
-OPTIONS=("$FULLINPUT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM")
+OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM")
 MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
 if [ -d "NetworkNullHPC.$MYCK" ]
 then
@@ -119,11 +124,62 @@ then
 fi
 mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(echo "cksum mat nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+cat <(echo "cksum mat env nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+
+# Normalize OTU matrix and get its size
+Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
+
+# Environmental parameter matrix check
+if [ $? -eq 2 ]
+then
+	echo "The number of samples in the OTU matrix and the environmental parameter tables do not match. Please correct"
+	echo "Aborting."
+	exit 1
+elif [ $? -eq 3 ]
+then
+	echo "Not all environmental parameters are numeric. Please remove character and/or factoriel parameter(s)."
+	echo "Aborting."
+	exit 1
+elif [ $? -eq 4 ]
+then
+	echo "The sample names in the OTU matrix and the environmental parameter tables do not match. Please correct"
+	echo "Aborting."
+	exit 1
+fi
+
+# Calculate number of parallel jobs and the amount of memory and time to request
+if [ $ENVMAT != "NA" ]
+then
+	matsize=$(( $(cat nbotu) + $(cat nbenv) ))	
+else
+	matsize=$(cat nbotu)
+fi
+pairsize=$((matsize*(matsize-1)/2))
+memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
+blocks=$(( (pairsize/10000+9)/10 ))
+reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
+if [ $((reqtime*2)) -ge 60 ]
+then
+	array=1-$BOOTSTRAP
+	reqtime2=$reqtime
+	PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
+	NULLSPEAR="Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID"
+else
+	step=$((60/reqtime))
+	seqlen=$(seq 1 $step $BOOTSTRAP | sed -n '$=')
+	if [ $seqlen -lt 16 ]
+	then
+		step=$(awk -v B=$BOOTSTRAP 'BEGIN{s=B/16;if(s!=int(s)){print int(s)+1} else print s}')
+	fi
+	array=1-${BOOTSTRAP}:${step}
+	reqtime2=$((reqtime*step))
+	MAXSEQ="maxseq=\$(if [ \$((SLURM_ARRAY_TASK_ID + $step)) -gt $BOOTSTRAP ] ; then echo $BOOTSTRAP ; else echo \$((SLURM_ARRAY_TASK_ID+$step-1)) ; fi )"
+	PREVSPEAR="for i in \$(seq \$SLURM_ARRAY_TASK_ID \$maxseq); do Rscript --vanilla $MYSD/rscripts/spearman.R \$i ; done"
+	NULLSPEAR="for i in \$(seq \$SLURM_ARRAY_TASK_ID \$maxseq); do Rscript --vanilla $MYSD/rscripts/rand_network.R \$i ; done"
+fi
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
-PREVSPEAR="Rscript --vanilla $MYSD/rscripts/spearman.R \$SLURM_ARRAY_TASK_ID"
 for i in ../NetworkNullHPC.*
 do
 	if [ "$(basename $i)" != "$(basename $PWD)" ]
@@ -146,20 +202,21 @@ do
 	fi
 done
 
-# Normalize OTU matrix and get its size
-Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
-# Calculate number of parallel jobs and the amount of memory and time to request
-matsize=`cat nbotu`
-pairsize=$((matsize*(matsize-1)/2))
-memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
-blocks=$(( (pairsize/10000+9)/10 ))
-reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
+# Print infos
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
 The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
+$INFOPREV
 EOF
+if [ $ENVMAT != "NA" ]
+then
+	cat >> info <<EOF
+
+The environmental parameter table contains $(cat nbenv) variables.
+EOF
+fi
 cat info
 
 # Estimate the correlation thresholds from one random matrix
@@ -167,8 +224,8 @@ cat > sub_range <<EOF
 #!/bin/bash
 
 #SBATCH -J range_$MYCK
-#SBATCH -o log.estimate_range.%j.out
-#SBATCH -e log.estimate_range.%j.err
+#SBATCH -o log.range.%j.out
+#SBATCH -e log.range.%j.err
 #SBATCH -t $reqtime
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
@@ -183,18 +240,19 @@ cat > sub_spearman <<EOF
 #!/bin/bash
 
 #SBATCH -J spearman_$MYCK
-#SBATCH -a 1-$BOOTSTRAP
+#SBATCH -a $array
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
 #SBATCH --open-mode=append
-#SBATCH -t $reqtime
+#SBATCH -t $reqtime2
 #SBATCH -n 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 
 module load $RMODULE
+$MAXSEQ
 $PREVSPEAR
-Rscript --vanilla $MYSD/rscripts/rand_network.R \$SLURM_ARRAY_TASK_ID
+$NULLSPEAR
 
 EOF
 
@@ -274,6 +332,7 @@ then
 	echo "The co-exclusion network is empty, exiting."
 	exit 1
 elif [ \$REXIT == 1 ]
+then
 	echo "Error during network step, exiting"
 	exit 1
 fi
