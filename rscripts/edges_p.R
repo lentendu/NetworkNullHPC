@@ -15,14 +15,14 @@ if (length(edges_ok)>0) {
   # read p.values
   pvals<-foreach(i=1:nboot,.combine=cbind) %do% {
     tmp_path<-file.path("spearman_noise_p",paste0(i,".h5"))
-    h5read(tmp_path,as.character(i),index=list(edges_ok,block))
+    h5read(tmp_path,as.character(i),index=list(edges_ok$edges,block))
   }
   # Select edges for which 90% of corrected pvalues are significant
   pvals_ok<-which(apply(pvals,1,function(x) {sum((p.adjust(x,method="BH")<=0.01)*1)})>=nboot*0.9)
   # intersection of Markov sampling and threshold validated edges with significant edges
-  edges_ok_signif<-edges_ok[pvals_ok]
+  edges_ok_signif<-edges_ok[pvals_ok,]
 } else {
-  edges_ok_signif<-integer()
+  edges_ok_signif<-NULL
 }
 
 # save edges
