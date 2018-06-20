@@ -1,4 +1,5 @@
 suppressMessages(library(plyr))
+suppressMessages(library(foreach))
 suppressMessages(library(doParallel))
 suppressMessages(library(rhdf5))
 
@@ -16,8 +17,8 @@ files_ex<-paste("edges_ex",1:blocks,sep="_")
 
 cl<-makeCluster(ncores)
 registerDoParallel(cl)
-edges_ok_signif<-llply(files,function(i) {readRDS(file.path("spearman_noise_p",i))},.parallel=T)
-edges_ex_ok_signif<-llply(files_ex,function(i) {readRDS(file.path("spearman_noise_p",i))},.parallel=T)
+edges_ok_signif<-foreach(i=files) %dopar% {readRDS(file.path("spearman_noise_p",i))}
+edges_ex_ok_signif<-foreach(i=files_ex) %dopar% {readRDS(file.path("spearman_noise_p",i))}
 stopCluster(cl)
 
 # network
