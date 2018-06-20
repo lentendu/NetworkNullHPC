@@ -20,7 +20,7 @@ if (length(edges_ex_ok)>0) {
   # Select edges for which 90% of corrected pvalues are significant
   pvals_ex_ok<-which(apply(pvals,1,function(x) {sum((p.adjust(x,method="BH")<=0.01)*1)})>=nboot*0.9)
   # intersection of Markov sampling and threshold validated edges with significant edges
-  edges_ex_ok_signif<-edges_ex_ok[pvals_ex_ok]
+  edges_ex_ok_signif<-edges_ex_ok[pvals_ex_ok,]
 } else {
   edges_ex_ok_signif<-NULL
 }
