@@ -224,8 +224,8 @@ cat > sub_range <<EOF
 #!/bin/bash
 
 #SBATCH -J range_$MYCK
-#SBATCH -o log.range.%j.out
-#SBATCH -e log.range.%j.err
+#SBATCH -o log.%x.out
+#SBATCH -e log.%x.err
 #SBATCH -t $reqtime
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
@@ -261,8 +261,8 @@ cat > sub_threshold <<EOF
 #!/bin/bash
 
 #SBATCH -J threshold_$MYCK
-#SBATCH -o log.%j.out
-#SBATCH -e log.%j.err
+#SBATCH -o log.%x.out
+#SBATCH -e log.%x.err
 #SBATCH -t 01:00:00
 #SBATCH -n 1
 #SBATCH --cpus-per-task=16
@@ -311,8 +311,8 @@ cat > sub_network <<EOF
 #!/bin/bash
 
 #SBATCH -J network_$MYCK
-#SBATCH -o log.%j.out
-#SBATCH -e log.%j.err
+#SBATCH -o log.%x.out
+#SBATCH -e log.%x.err
 #SBATCH -t 12:00:00
 #SBATCH -N 1
 #SBATCH -n 1
