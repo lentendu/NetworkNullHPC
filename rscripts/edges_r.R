@@ -25,7 +25,7 @@ if (length(edges_ok)>0) {
 
 # Exclusion edges below the exclusion threshold
 edges_ex_ok<-which(rowSums((edges<threshold_ex)*1)>=nboot*0.9)
-if (length(edges_ok)>0) {
+if (length(edges_ex_ok)>0) {
 	saveRDS(cbind.data.frame(edges=edges_ex_ok,cor=round(apply(edges[edges_ex_ok,,drop=F],1,median),digits=3)),file.path("spearman_noise_r",paste0("edges_ex_",block)))
 } else {
 	saveRDS(NULL,file.path("spearman_noise_r",paste0("edges_ex_",block)))
