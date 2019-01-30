@@ -45,7 +45,7 @@ REPORTING BUGS
 	
 COPYRIGHT
 	MIT License
-	Copyright (c) 2018 Guillaume Lentendu
+	Copyright (c) 2018-2019 Guillaume Lentendu
 
 EOF
 }
@@ -130,20 +130,39 @@ cat <(echo "cksum mat env nboot depth minocc mincount nullm") <(echo "$MYCK ${OP
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
 
 # Environmental parameter matrix check
-if [ $? -eq 2 ]
+if [ $? -eq 1 ]
+then
+	echo "Something went wrong in the initial check of the OTU matrix."
+	echo "Check that your input matrix have the correct format, as described in the README."
+	echo "Also check the content of the initial R script logs below:"
+	echo " ### NetworkNullHPC.$MYCK/log.clean_mat.out ###"
+	cat log.clean_mat.out
+	echo " ######"
+	echo " ### NetworkNullHPC.$MYCK/log.clean_mat.err ###"
+	cat log.clean_mat.err
+	echo " ######"
+	echo "Once you identify and correct the issue, delete the NetworkNullHPC.$MYCK directory before re-executing NetworkNullHPC."
+	echo " ######"
+	echo "Aborting."
+	cd ..
+	exit 1
+elif [ $? -eq 2 ]
 then
 	echo "The number of samples in the OTU matrix and the environmental parameter tables do not match. Please correct"
 	echo "Aborting."
+	cd ..
 	exit 1
 elif [ $? -eq 3 ]
 then
 	echo "Not all environmental parameters are numeric. Please remove character and/or factoriel parameter(s)."
 	echo "Aborting."
+	cd ..
 	exit 1
 elif [ $? -eq 4 ]
 then
 	echo "The sample names in the OTU matrix and the environmental parameter tables do not match. Please correct"
 	echo "Aborting."
+	cd ..
 	exit 1
 fi
 
@@ -157,6 +176,7 @@ fi
 pairsize=$((matsize*(matsize-1)/2))
 memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
+if [ $blocks -eq 0 ]; then blocks=1 ; fi
 reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
 if [ $((reqtime*2)) -ge 60 ]
 then
@@ -226,7 +246,7 @@ cat > sub_range <<EOF
 #SBATCH -J range_$MYCK
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
-#SBATCH -t $reqtime
+#SBATCH -t ${reqtime2}
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 
@@ -244,7 +264,7 @@ cat > sub_spearman <<EOF
 #SBATCH -o log.%x.out
 #SBATCH -e log.%x.err
 #SBATCH --open-mode=append
-#SBATCH -t $reqtime2
+#SBATCH -t ${reqtime2}
 #SBATCH -n 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
@@ -323,19 +343,34 @@ $SLURMACCOUNT
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
 REXIT=\$?
-if [ \$REXIT == 2 ]
-then
-	echo "The co-occurrence network is empty, exiting."
-	exit 1
-elif [ \$REXIT == 3 ]
-then
-	echo "The co-exclusion network is empty, exiting."
-	exit 1
-elif [ \$REXIT == 1 ]
+
+if [ \$REXIT == 1 ]
 then
 	echo "Error during network step, exiting"
 	exit 1
+else
+	COOCT=\$(cat threshold)
+	COEXT=\$(cat ex_threshold)
 fi
+
+if [ \$REXIT == 0 ] || [ \$REXIT == 3 ]
+then
+	COOCE=\$(sed -n '$=' ../cooccurrence.$MYCK.${INPUT%.*}.txt)
+	COOCN=\$(cut -d " " -f 1-2 ../cooccurrence.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
+	COOCSTAT=\$(echo "The co-occurrence network contains \$COOCE edges involving \$COOCN OTUs.")
+else
+	COOCSTAT=\$(echo "The co-occurrence network is empty.")
+fi
+
+if [ \$REXIT == 0 ] || [ \$REXIT == 2 ]
+then
+	COEXE=\$(sed -n '$=' ../coexclusion.$MYCK.${INPUT%.*}.txt)
+	COEXN=\$(cut -d " " -f 1-2 ../coexclusion.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
+	COEXSTAT=\$(echo "The co-exclusion network contains \$COEXE edges involving \$COEXN OTUs.")
+else
+	COEXSTAT=\$(echo "The co-exclusion network is empty.")
+fi
+
 cat > info_start <<EOF2
 ${0##*/}
 
@@ -346,22 +381,15 @@ The input matrix is ${INPUT}.
 The input options are:
 EOF2
 
-COOCT=\$(cat threshold)
-COOCE=\$(wc -l ../cooccurrence.$MYCK.${INPUT%.*}.txt)
-COOCN=\$(cut -d " " -f 1-2 ../cooccurrence.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
-COEXT=\$(cat ex_threshold)
-COEXE=\$(wc -l ../coexclusion.$MYCK.${INPUT%.*}.txt)
-COEXN=\$(cut -d " " -f 1-2 ../coexclusion.$MYCK.${INPUT%.*}.txt | tr " " "\n" | sort -u | wc -l)
-
 cat > info_end <<EOF3
 
 ## OUTPUT ##
 
 The Spearman's rank correlation threshold was set to \$COOCT for the co-occurrence network.
-The co-occurrence network contains \$COOCE edges involving \$COOCN OTUs.
+\$COOCSTAT
 
 The Spearman's rank correlation threshold was set to \$COEXT for the co-exclusion network.
-The co-exclusion network contains \$COEXE edges involving \$COEXN OTUs.
+\$COEXSTAT
 
 EOF3
 

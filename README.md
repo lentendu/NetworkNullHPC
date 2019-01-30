@@ -32,12 +32,13 @@ Usage informations will be displayed by invoking:
 
 	NetworkNullHPC.sh -h
 
-The expected input OTU table format contains sample as rows and OTU as columns, with the first column containing one field less to be properly read by the R read.table command.
+The expected input OTU table format is a TAB or space separated file containing samples as rows and OTUs as columns, with the first column containing one field less, so that the first row and the first column could be used as the OTU and sample names, respectively.
 
 Three outputs are produced:
- - a co-occurrence edge list
- - a co-exclusion edge list
- - a text summary of the option used
+ - a text summary of the option used and the output network sizes
+ - a co-occurrence edge list (if significant edges found)
+ - a co-exclusion edge list (if significant edges found)
+  The edge lists contain three columns: the two OTUs linked by the edge and the median Spearman's rank correlation value calculated over the bootstraped random noise addition matrices.
 
 REFERENCE
 ---------
