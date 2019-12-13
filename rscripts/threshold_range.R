@@ -46,7 +46,7 @@ cor_rand_r<-c(as.dist(cor_rand$r))
 
 # positive correlation
 pos_tresh<-NULL
-for(i in seq(0.9,0.2,-0.01)) {
+for(i in seq(0.9,0.1,-0.01)) {
   tmp_edges<-which(cor_rand_r>=i)
   if(length(tmp_edges)>1) {
     tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
@@ -58,7 +58,7 @@ for(i in seq(0.9,0.2,-0.01)) {
 }
 
 neg_tresh<-NULL
-for(i in seq(-0.9,-0.2,0.01)) {
+for(i in seq(-0.9,-0.1,0.01)) {
   tmp_edges<-which(cor_rand_r<=i)
   if(length(tmp_edges)>1) {
     tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
