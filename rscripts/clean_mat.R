@@ -40,7 +40,7 @@ mat_ab<-mat_tmp2[,which(colSums((mat_tmp2>0)*1)>=mino)]
 # better than rarefaction (but see McMurdie & Holmes, 2014)
 # additional log or sqrt transformation of ratio is to reduce the exponential abundance bias due to PCR
 if(norm=="no") {
-  
+  mat_norm<-mat_ab
 } else {
   if(norm=="ratio") {
     mat_tmp<-mat_ab
@@ -49,11 +49,11 @@ if(norm=="no") {
   } else if(norm=="ratio_sqrt") {
     mat_tmp<-decostand(mat_ab,"hellinger")
   }
-    if(depth>1) {
-      mat_norm<-round(mat_tmp*(depth/rowSums(mat_tmp)))
-    } else {
-      mat_norm<-round(mat_tmp*(median(rowSums(mat_ab))*depth/rowSums(mat_tmp)))
- }
+  if(depth>1) {
+    mat_norm<-round(mat_tmp*(depth/rowSums(mat_tmp)))
+  } else {
+    mat_norm<-round(mat_tmp*(median(rowSums(mat_ab))*depth/rowSums(mat_tmp)))
+  }
 }
 
 # save normalized OTU table and its size

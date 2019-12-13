@@ -182,7 +182,7 @@ pairsize=$((matsize*(matsize-1)/2))
 memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $blocks -eq 0 ]; then blocks=1 ; fi
-reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000005+1; if(T!=int(T)){T=T+1};print int(T)}')
+reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000006+1; if(T!=int(T)){T=T+1};print int(T)}')
 if [ $((reqtime*2)) -ge 60 ]
 then
 	array=1-$BOOTSTRAP
