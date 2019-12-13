@@ -38,10 +38,22 @@ mat_ab<-mat_tmp2[,which(colSums((mat_tmp2>0)*1)>=mino)]
 
 # Normalize read counts by multiplying each sample read counts by the ratio of half the read count median of all samples divide by total sample read counts
 # better than rarefaction (but see McMurdie & Holmes, 2014)
-if(depth>1) {
-  mat_norm<-round(mat_ab*(depth/rowSums(mat_ab)))
+# additional log or sqrt transformation of ratio is to reduce the exponential abundance bias due to PCR
+if(norm=="no") {
+  
 } else {
-  mat_norm<-round(mat_ab*(median(rowSums(mat_ab))*depth/rowSums(mat_ab)))
+  if(norm=="ratio") {
+    mat_tmp<-mat_ab
+  } else if(norm=="ratio_log") {
+    mat_tmp<-decostand(mat_ab,"log")
+  } else if(norm=="ratio_sqrt") {
+    mat_tmp<-decostand(mat_ab,"hellinger")
+  }
+    if(depth>1) {
+      mat_norm<-round(mat_tmp*(depth/rowSums(mat_tmp)))
+    } else {
+      mat_norm<-round(mat_tmp*(median(rowSums(mat_ab))*depth/rowSums(mat_tmp)))
+ }
 }
 
 # save normalized OTU table and its size

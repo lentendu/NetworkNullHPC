@@ -25,9 +25,12 @@ DESCRIPTION
 	-e environmental_parameters
 		[EXPERIMENTAL OPTION!] Environmental parameter table in Tab separeted format, with parameters as column and samples as rows. The first column have to contain identical sample names as in the OTU table, the first row contains the parameter names (and thus contain one field less). This will include the environmental parameters in the observed matrix Spearman's correlation calculations and include them in the final networks.
 	
-	-n null_model
+	-m null_model
 		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among samples (1), constrained among OTUs (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 0
 	
+	-n normalization
+		Select the normalization algorithm for the OTU matrix: "ratio" for count ratio scaled to sum to same total (as defined by option -d) in each sample and rounded; "ratio_log" for log-transformed ratio (as implemented in vegan::decostand) scaled as for the "ratio" method; "ratio_sqrt" for square-root transformed ratio (as implemented in vegan::decostand) scaled as for the "ratio" method; "no" for no normalization. Default: "ratio"
+		
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
 	
@@ -57,6 +60,7 @@ ENVMAT="NA"
 MINOCC=0.1
 MINCOUNT=0.1
 NULLM=0
+NORM="ratio"
 
 # get options
 while getopts ":a:b:d:e:hn:o:r:" opt
@@ -68,7 +72,8 @@ do
 		b)	BOOTSTRAP=$OPTARG;;
 		d)	DEPTH=$OPTARG;;
 		e)	ENVMAT=$(readlink -f $OPTARG);;
-		n)	NULLM=$OPTARG;;
+		m)	NULLM=$OPTARG;;
+		n)	NORM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
 		r)	MINCOUNT=$OPTARG;;
 		c)	CLEAN=no;;
@@ -113,7 +118,7 @@ then
 fi
 
 # Prepare directories and configuration file
-OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM")
+OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM $NORM")
 MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
 if [ -d "NetworkNullHPC.$MYCK" ]
 then
@@ -124,7 +129,7 @@ then
 fi
 mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(echo "cksum mat env nboot depth minocc mincount nullm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+cat <(echo "cksum mat env nboot depth minocc mincount nullm norm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
 
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
