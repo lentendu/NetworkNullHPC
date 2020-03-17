@@ -63,7 +63,7 @@ NULLM=0
 NORM="ratio"
 
 # get options
-while getopts ":a:b:d:e:hn:o:r:" opt
+while getopts ":a:b:d:e:hm:n:o:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
