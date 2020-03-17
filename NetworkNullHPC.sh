@@ -44,11 +44,11 @@ REFERENCE
 	Connor, N., Barberán, A., & Clauset, A. (2017). Using null models to infer microbial co-occurrence networks. PLOS ONE, 12(5), e0176751. doi:10.1371/journal.pone.0176751
 
 REPORTING BUGS
-	Submit suggestions and bug-reports at <https://github.com/lentendu/NetworkNullHPC/issues>, or send an email to <lentendu@rhrk.uni-kl.de>.
+	Submit suggestions and bug-reports at <https://github.com/lentendu/NetworkNullHPC/issues>, or send an email to <guillaume.lentendu@unine.ch>.
 	
 COPYRIGHT
 	MIT License
-	Copyright (c) 2018-2019 Guillaume Lentendu
+	Copyright (c) 2018-2020 Guillaume Lentendu
 
 EOF
 }
@@ -249,8 +249,8 @@ cat > sub_range <<EOF
 #!/bin/bash
 
 #SBATCH -J range_$MYCK
-#SBATCH -o log.%x.out
-#SBATCH -e log.%x.err
+#SBATCH -o log.range.out
+#SBATCH -e log.range.err
 #SBATCH -t ${reqtime2}
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
@@ -266,8 +266,8 @@ cat > sub_spearman <<EOF
 
 #SBATCH -J spearman_$MYCK
 #SBATCH -a $array
-#SBATCH -o log.%x.out
-#SBATCH -e log.%x.err
+#SBATCH -o log.spearman.out
+#SBATCH -e log.spearman.err
 #SBATCH --open-mode=append
 #SBATCH -t ${reqtime2}
 #SBATCH -n 1
@@ -286,8 +286,8 @@ cat > sub_threshold <<EOF
 #!/bin/bash
 
 #SBATCH -J threshold_$MYCK
-#SBATCH -o log.%x.out
-#SBATCH -e log.%x.err
+#SBATCH -o log.threshold.out
+#SBATCH -e log.threshold.err
 #SBATCH -t 01:00:00
 #SBATCH -n 1
 #SBATCH --cpus-per-task=16
@@ -317,8 +317,8 @@ cat > sub_edges <<EOF
 
 #SBATCH -J edges_$MYCK
 #SBATCH -a 1-${blocks}
-#SBATCH -o log.%x.out
-#SBATCH -e log.%x.err
+#SBATCH -o log.edges.out
+#SBATCH -e log.edges.err
 #SBATCH --open-mode=append
 #SBATCH -t 06:00:00
 #SBATCH -n 1
@@ -336,8 +336,8 @@ cat > sub_network <<EOF
 #!/bin/bash
 
 #SBATCH -J network_$MYCK
-#SBATCH -o log.%x.out
-#SBATCH -e log.%x.err
+#SBATCH -o log.network.out
+#SBATCH -e log.network.err
 #SBATCH -t 12:00:00
 #SBATCH -N 1
 #SBATCH -n 1
