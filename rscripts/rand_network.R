@@ -21,6 +21,8 @@ neg_tresh<-scan("neg_tresh_range",quiet=T)
 if(is.numeric(nullm)) {
   if(nullm==0) {
     set.seed(seed+12345); mat_rand<-matrix(sample(c(mat)),nrow=nrow(mat))
+  } else if(nullm==1) {
+    set.seed(seed+12345); mat_rand<-t(apply(mat,nullm,sample))
   } else {
     set.seed(seed+12345); mat_rand<-apply(mat,nullm,sample)
   }
