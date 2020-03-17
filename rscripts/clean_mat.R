@@ -19,22 +19,21 @@ write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
 for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
-# Drop samples with too few reads
-if(mincount>1) {
-  minc<-mincount
-} else {
-  minc<-ceiling(median(rowSums(mat))*mincount)
-}
-mat_tmp<-mat[which(rowSums(mat)>=minc),]
-mat_tmp2<-mat_tmp[,which(colSums(mat_tmp)>0)]
-
 # Drop OTUs with low occurrence
 if(minocc>1) {
   mino<-minocc
 } else {
-  mino<-ceiling(nrow(mat_tmp2)*minocc)
+  mino<-ceiling(nrow(mat)*minocc)
 }
-mat_ab<-mat_tmp2[,which(colSums((mat_tmp2>0)*1)>=mino)]
+mat_tmp<-mat[,which(colSums((mat>0)*1)>=mino)]
+
+# Drop samples with too few reads
+if(mincount>1) {
+  minc<-mincount
+} else {
+  minc<-ceiling(median(rowSums(mat_tmp))*mincount)
+}
+mat_ab<-mat_tmp[which(rowSums(mat_tmp)>=minc),]
 
 # Normalize read counts by multiplying each sample read counts by the ratio of half the read count median of all samples divide by total sample read counts
 # better than rarefaction (but see McMurdie & Holmes, 2014)
