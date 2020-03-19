@@ -24,6 +24,9 @@ DESCRIPTION
 	
 	-e environmental_parameters
 		[EXPERIMENTAL OPTION!] Environmental parameter table in Tab separeted format, with parameters as column and samples as rows. The first column have to contain identical sample names as in the OTU table, the first row contains the parameter names (and thus contain one field less). This will include the environmental parameters in the observed matrix Spearman's correlation calculations and include them in the final networks.
+
+	-l largest_component_percent
+		Maximum percentage of total OTUs allowed in the largest component in randomly permuted (null) matrices correlation networks, which will be used to set the correlation threshold. Default: 1
 	
 	-m null_model
 		Select the randomization algorithm between cells shuffling over the whole matrix (0), constrained among samples (1), constrained among OTUs (2), or individuals shuffling over the whole matrix (none), with fixed sample read counts (rows), with fixed OTU read counts (columns) or with fixed sample and OTU read counts (both) using the R vegan permatfull function with default parameters. For all models modifying the sample read counts, the read count is re-normalized using the -d parameter. Default: 0
@@ -33,7 +36,7 @@ DESCRIPTION
 		
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
-	
+
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 
@@ -61,9 +64,10 @@ MINOCC=0.1
 MINCOUNT=0.1
 NULLM=0
 NORM="ratio"
+LARGECP=1
 
 # get options
-while getopts ":a:b:d:e:hm:n:o:r:" opt
+while getopts ":a:b:d:e:hl:m:n:o:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -72,6 +76,7 @@ do
 		b)	BOOTSTRAP=$OPTARG;;
 		d)	DEPTH=$OPTARG;;
 		e)	ENVMAT=$(readlink -f $OPTARG);;
+		l)	LARGECP=$OPTARG;;
 		m)	NULLM=$OPTARG;;
 		n)	NORM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
@@ -303,11 +308,11 @@ paste paste_cc_ex_{1..$BOOTSTRAP..20} > ../rand_cc_ex
 rm paste_cc_[0-9]*
 rm paste_cc_ex_[0-9]*
 cd ..
-# at which threshold the largest connected component contain less than 1% of total OTU number in at least 90 % of the random matrices?
+# at which threshold the largest connected component contain less than ${PERCENT}% of total OTU number in at least 90 % of the random matrices?
 POS_TRESH=\$(awk '{print \$1*100}' pos_tresh_range)
-paste <(seq \$((POS_TRESH-5)) \$((POS_TRESH+15)) | awk '{print \$1/100}') rand_cc | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > threshold
+paste <(seq \$((POS_TRESH-5)) \$((POS_TRESH+15)) | awk '{print \$1/100}') rand_cc | awk -v L=$LARGECP '{count=0;for(i=2;i<=NF;i++){if(\$i<=L/100*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > threshold
 NEG_TRESH=\$(awk '{print \$1*100}' neg_tresh_range)
-paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk '{count=0;for(i=2;i<=NF;i++){if(\$i<=0.01*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > ex_threshold
+paste <(seq \$((NEG_TRESH+5)) -1 \$((NEG_TRESH-15)) | awk '{print \$1/100}') rand_cc_ex | awk -v L=$LARGECP '{count=0;for(i=2;i<=NF;i++){if(\$i<=L/100*$matsize){count+=1}};if(count>=$BOOTSTRAP*0.9){print \$1;exit}}' > ex_threshold
 
 EOF
 
