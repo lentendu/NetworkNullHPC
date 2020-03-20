@@ -37,7 +37,7 @@ DESCRIPTION
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
 
-	-p	partition_name
+	-p partition_name
 		Partition name for SLURM sbatch -p option.
 
 	-r minimum_read_count
@@ -83,7 +83,7 @@ do
 		m)	NULLM=$OPTARG;;
 		n)	NORM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
-		P)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
+		p)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
 		r)	MINCOUNT=$OPTARG;;
 		c)	CLEAN=no;;
 		\?)	echo "# Error" >&2
