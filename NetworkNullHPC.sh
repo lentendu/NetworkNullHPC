@@ -37,6 +37,9 @@ DESCRIPTION
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
 
+	-p	partition_name
+		Partition name for SLURM sbatch -p option.
+
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 
@@ -67,7 +70,7 @@ NORM="ratio"
 LARGECP=1
 
 # get options
-while getopts ":a:b:d:e:hl:m:n:o:r:" opt
+while getopts ":a:b:d:e:hl:m:n:o:p:r:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -80,6 +83,7 @@ do
 		m)	NULLM=$OPTARG;;
 		n)	NORM=$OPTARG;;
 		o)	MINOCC=$OPTARG;;
+		P)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
 		r)	MINCOUNT=$OPTARG;;
 		c)	CLEAN=no;;
 		\?)	echo "# Error" >&2
@@ -259,6 +263,7 @@ cat > sub_range <<EOF
 #SBATCH -t ${reqtime2}
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
+$SLURMPART
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/threshold_range.R
@@ -278,6 +283,7 @@ cat > sub_spearman <<EOF
 #SBATCH -n 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
+$SLURMPART
 
 module load $RMODULE
 $MAXSEQ
@@ -298,6 +304,7 @@ cat > sub_threshold <<EOF
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=16G
 $SLURMACCOUNT
+$SLURMPART
 
 cd spearman_rand_r
 parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_{\$a..\$((a+19))} > paste_cc_\$a' ::: {1..$BOOTSTRAP..20}
@@ -329,6 +336,7 @@ cat > sub_edges <<EOF
 #SBATCH -n 1
 #SBATCH --mem=12G
 $SLURMACCOUNT
+$SLURMPART
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/edges_r.R \$SLURM_ARRAY_TASK_ID
@@ -349,6 +357,7 @@ cat > sub_network <<EOF
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
 $SLURMACCOUNT
+$SLURMPART
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
