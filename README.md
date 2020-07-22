@@ -24,6 +24,7 @@ In R, the following packages are requested:
  - foreach
  - doParallel
  - rhdf5
+ - compositions
 
 USAGE
 -----
@@ -32,7 +33,7 @@ Usage informations will be displayed by invoking:
 
 	NetworkNullHPC.sh -h
 
-The expected input OTU table format is a TAB or space separated file containing samples as rows and OTUs as columns, with the first column containing one field less, so that the first row and the first column could be used as the OTU and sample names, respectively.
+The expected input OTU table format is a TAB or space separated file containing samples as rows and OTUs as columns, with the first column containing one field less, so that the first row and the first column could be used as the OTU and sample names, respectively. If the OTU table was edited under Windows OS, pay attention to use Unix compliant end of line (\n).
 
 Three outputs are produced:
  - a text summary of the option used and the output network sizes
