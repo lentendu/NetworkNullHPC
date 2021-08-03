@@ -8,7 +8,7 @@ NAME
 	Network construction following Connor et al. (2017) for SLURM jod sheduler
 	
 SYNOPSIS
-	Usage: ${0##*/} [-h] [-a account_name] [-d expected_depth][-o minimum_occurrence_percent] [-r minimum_read_count] INPUT_OTU_MATRIX
+	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -w nodelistINPUT_OTU_MATRIX
 
 DESCRIPTION
 	-h	display this help and exit
@@ -42,6 +42,9 @@ DESCRIPTION
 
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
+	
+	-w nodelist
+		Request a specific list of hosts for SLURM sbatch -w option.
 
 AUTHOR
 	Guillaume Lentendu
@@ -70,7 +73,7 @@ NORM="ratio"
 LARGECP=1
 
 # get options
-while getopts ":a:b:d:e:hl:m:n:o:p:r:" opt
+while getopts ":a:b:d:e:hl:m:n:o:p:r:w:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -85,6 +88,7 @@ do
 		o)	MINOCC=$OPTARG;;
 		p)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
 		r)	MINCOUNT=$OPTARG;;
+		w)	SLURMNODEL=$(echo "#SBATCH -w $OPTARG");;
 		c)	CLEAN=no;;
 		\?)	echo "# Error" >&2
 			echo "# Invalid option: -$OPTARG" >&2
@@ -241,7 +245,7 @@ done
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
-The normalied matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
+The normalized matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
 $INFOPREV
 EOF
 if [ $ENVMAT != "NA" ]
@@ -264,6 +268,7 @@ cat > sub_range <<EOF
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 $SLURMPART
+$SLURMNODEL
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/threshold_range.R
@@ -284,6 +289,7 @@ cat > sub_spearman <<EOF
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 $SLURMPART
+$SLURMNODEL
 
 module load $RMODULE
 $MAXSEQ
@@ -305,6 +311,7 @@ cat > sub_threshold <<EOF
 #SBATCH --mem=16G
 $SLURMACCOUNT
 $SLURMPART
+$SLURMNODEL
 
 cd spearman_rand_r
 parallel -j \$SLURM_CPUS_PER_TASK 'a={} ; eval paste cc_{\$a..\$((a+19))} > paste_cc_\$a' ::: {1..$BOOTSTRAP..20}
@@ -337,6 +344,7 @@ cat > sub_edges <<EOF
 #SBATCH --mem=12G
 $SLURMACCOUNT
 $SLURMPART
+$SLURMNODEL
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/edges_r.R \$SLURM_ARRAY_TASK_ID
@@ -358,6 +366,7 @@ cat > sub_network <<EOF
 #SBATCH --mem=32G
 $SLURMACCOUNT
 $SLURMPART
+$SLURMNODEL
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/network.R \$SLURM_CPUS_PER_TASK ${blocks}
