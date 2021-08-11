@@ -285,6 +285,7 @@ cat > sub_spearman <<EOF
 #SBATCH --open-mode=append
 #SBATCH -t ${reqtime2}
 #SBATCH -n 1
+#SBATCH -c 1
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 $SLURMPART
@@ -339,6 +340,7 @@ cat > sub_edges <<EOF
 #SBATCH --open-mode=append
 #SBATCH -t 06:00:00
 #SBATCH -n 1
+#SBATCH -c 1
 #SBATCH --mem=12G
 $SLURMACCOUNT
 $SLURMPART
