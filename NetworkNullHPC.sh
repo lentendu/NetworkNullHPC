@@ -8,7 +8,7 @@ NAME
 	Network construction following Connor et al. (2017) for SLURM jod sheduler
 	
 SYNOPSIS
-	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -w nodelistINPUT_OTU_MATRIX
+	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -x nodelist ] INPUT_OTU_MATRIX
 
 DESCRIPTION
 	-h	display this help and exit
@@ -43,8 +43,8 @@ DESCRIPTION
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
-	-w nodelist
-		Request a specific list of hosts for SLURM sbatch -w option for array jobs.
+	-x nodelist
+		exclude a list of nodes from the resources granted to array jobs, this correpsond to the SLURM --exclude option, allow for array jobs to be distributed on a reduced amount of nodes
 
 AUTHOR
 	Guillaume Lentendu
@@ -88,7 +88,7 @@ do
 		o)	MINOCC=$OPTARG;;
 		p)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
 		r)	MINCOUNT=$OPTARG;;
-		w)	SLURMNODEL=$(echo "#SBATCH -w $OPTARG");;
+		x)	SLURMNODEX=$(echo "#SBATCH --exclude $OPTARG");;
 		c)	CLEAN=no;;
 		\?)	echo "# Error" >&2
 			echo "# Invalid option: -$OPTARG" >&2
@@ -289,7 +289,7 @@ cat > sub_spearman <<EOF
 #SBATCH --mem=${memsize}G
 $SLURMACCOUNT
 $SLURMPART
-$SLURMNODEL
+$SLURMNODEX
 
 module load $RMODULE
 $MAXSEQ
@@ -344,7 +344,7 @@ cat > sub_edges <<EOF
 #SBATCH --mem=12G
 $SLURMACCOUNT
 $SLURMPART
-$SLURMNODEL
+$SLURMNODEX
 
 module load $RMODULE
 Rscript --vanilla $MYSD/rscripts/edges_r.R \$SLURM_ARRAY_TASK_ID
