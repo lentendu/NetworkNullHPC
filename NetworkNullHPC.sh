@@ -44,20 +44,21 @@ DESCRIPTION
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
 	-x nodelist
-		exclude a list of nodes from the resources granted to array jobs, this correpsond to the SLURM --exclude option, allow for array jobs to be distributed on a reduced amount of nodes
+		exclude a list of nodes from the ressources granted to array jobs. This correpsond to the SLURM sbatch --exclude option, which allows for jobs to be distributed on a reduced amount of nodes
 
 AUTHOR
 	Guillaume Lentendu
 
-REFERENCE
+REFERENCES
 	Connor, N., Barberán, A., & Clauset, A. (2017). Using null models to infer microbial co-occurrence networks. PLOS ONE, 12(5), e0176751. doi:10.1371/journal.pone.0176751
+	Lentendu, G., & Dunthorn, M. (2021). Phylogenetic relatedness drives protist assembly in marine and terrestrial environments. Global Ecology and Biogeography, 30(7), 1532–1544. doi: https://doi.org/10.1111/geb.13317
 
 REPORTING BUGS
 	Submit suggestions and bug-reports at <https://github.com/lentendu/NetworkNullHPC/issues>, or send an email to <guillaume.lentendu@unine.ch>.
 	
 COPYRIGHT
 	MIT License
-	Copyright (c) 2018-2020 Guillaume Lentendu
+	Copyright (c) 2018-2021 Guillaume Lentendu
 
 EOF
 }

@@ -41,7 +41,8 @@ Three outputs are produced:
  - a co-exclusion edge list (if significant edges found)
   The edge lists contain three columns: the two OTUs linked by the edge and the median Spearman's rank correlation value calculated over the bootstraped random noise addition matrices.
 
-REFERENCE
----------
+REFERENCES
+----------
 
 Connor, N., Barberán, A., & Clauset, A. (2017). Using null models to infer microbial co-occurrence networks. PLOS ONE, 12(5), e0176751. doi:10.1371/journal.pone.0176751
+Lentendu, G., & Dunthorn, M. (2021). Phylogenetic relatedness drives protist assembly in marine and terrestrial environments. Global Ecology and Biogeography, 30(7), 1532–1544. doi: https://doi.org/10.1111/geb.13317
