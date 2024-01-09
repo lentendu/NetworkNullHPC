@@ -12,10 +12,6 @@ suppressMessages(library(compositions))
 # read options
 config<-read.table("config",h=T,as.is=2)
 mat<-read.table(config$mat,h=T)
-# transpose matrix if necessary
-if(nrow(mat)>ncol(mat)) {
-	mat<-t(mat)
-}
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
 for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
