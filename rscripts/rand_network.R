@@ -31,7 +31,7 @@ if(is.numeric(nullm)) {
 }
 
 # re-normalize per sample if necessary
-if(sd(rowSums(mat_rand))/ncol(mat_rand)>1) {
+if( sd(rowSums(mat_rand))/ncol(mat_rand)>1 & norm!="no" ) {
   if(depth>1) {
     mat_rand_norm<-round(mat_rand*(depth/rowSums(mat_rand)))
   } else {
