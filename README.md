@@ -23,7 +23,7 @@ In R, the following packages are requested:
  - igraph
  - foreach
  - doParallel
- - hdf5r
+ - rhdf5
  - compositions
 
 USAGE
