@@ -132,7 +132,7 @@ then
 fi
 
 # Prepare directories and configuration file
-OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM $NORM")
+OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM $NORM $LARGECP")
 MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
 if [ -d "NetworkNullHPC.$MYCK" ]
 then
@@ -143,7 +143,7 @@ then
 fi
 mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(echo "cksum mat env nboot depth minocc mincount nullm norm") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+cat <(echo "cksum mat env nboot depth minocc mincount nullm norm largecp") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
 
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err

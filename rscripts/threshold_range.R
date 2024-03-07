@@ -52,7 +52,7 @@ for(i in seq(0.9,0.01,-0.01)) {
   tmp_edges<-which(cor_rand_r>=i)
   if(length(tmp_edges)>1) {
     tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
-    if(tmp_c/ncol(mat)>0.01) {
+    if(tmp_c/ncol(mat)>largecp/100) {
       pos_tresh<-i
       break
     }
@@ -64,7 +64,7 @@ for(i in seq(-0.9,-0.01,0.01)) {
   tmp_edges<-which(cor_rand_r<=i)
   if(length(tmp_edges)>1) {
     tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
-    if(tmp_c/ncol(mat)>0.01) {
+    if(tmp_c/ncol(mat)>largecp/100) {
       neg_tresh<-i
       break
     }
