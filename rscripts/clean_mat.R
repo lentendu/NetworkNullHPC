@@ -10,7 +10,7 @@ suppressMessages(library(doParallel))
 suppressMessages(library(compositions))
 
 # read options
-config<-read.table("config",h=T,as.is=2)
+config<-read.table("config",h=T,colClasses=c(cksum="character",mat="character"))
 mat<-read.table(config$mat,h=T)
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")

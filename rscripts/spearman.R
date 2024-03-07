@@ -5,7 +5,7 @@ suppressMessages(library(rhdf5))
 seed<-as.numeric(commandArgs()[7])
 
 # read options
-config<-read.table("config",h=T,as.is=2)
+config<-read.table("config",h=T,colClasses=c(cksum="character",mat="character"))
 
 # load normalize matrix
 mat<-readRDS("mat")

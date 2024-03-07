@@ -5,7 +5,7 @@ suppressMessages(library(rhdf5))
 block<-as.numeric(commandArgs()[7])
 
 # read options
-config<-read.table("config",h=T,as.is=2)
+config<-read.table("config",h=T,colClasses=c(cksum="character",mat="character"))
 for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
 
 # get p.values of edges above threshold
