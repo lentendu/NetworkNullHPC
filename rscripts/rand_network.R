@@ -54,13 +54,13 @@ cor_rand_r<-c(as.dist(cor_rand$r))
 rand_cc<-laply(seq(pos_tresh-0.05,pos_tresh+0.15,0.01),function(x){
   tmp_edges<-which(cor_rand_r>=x)
   if(length(tmp_edges)>0) {
-    tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
+    tmp_c<-max(components(graph_from_data_frame(net_name[tmp_edges,],directed=F))$csize)
   } else {tmp_c<-0}
 })
 rand_cc_ex<-laply(seq(neg_tresh+0.05,neg_tresh-0.15,-0.01),function(x){
   tmp_edges<-which(cor_rand_r<=x)
   if(length(tmp_edges)>0) {
-    tmp_c<-max(components(graph.data.frame(net_name[tmp_edges,],directed=F))$csize)
+    tmp_c<-max(components(graph_from_data_frame(net_name[tmp_edges,],directed=F))$csize)
   } else {tmp_c<-0}
 })
 
