@@ -19,6 +19,20 @@ if ( grepl("\\.rds$",config$mat) ) {
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
 for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}
+if ( ncol(config) > 10 ) {
+  sec=T
+  if ( grepl("\\.rds$",config$second) ) {
+    second<-readRDS(config$second)
+  } else {
+    second<-read.table(config$second,h=T)
+  }
+  if ( nrow(mat) != nrow(second) ) {
+    quit(save="no",status=5,runLast=F)
+  }
+  write(ncol(second),"nbsec_ori")
+} else {
+  sec=F
+}
 
 # Drop OTUs with low occurrence
 if(minocc>1) {
@@ -27,6 +41,15 @@ if(minocc>1) {
   mino<-ceiling(nrow(mat)*minocc)
 }
 mat_tmp<-mat[,which(colSums((mat>0)*1)>=mino)]
+# same filter on second matrix
+if ( sec & same ) {
+  if(minocc>1) {
+    minos<-minocc
+  } else {
+    minos<-ceiling(nrow(second)*minocc)
+  }
+  second_tmp<-second[,which(colSums((second>0)*1)>=minos)]
+}
 
 # Drop samples with too few reads
 if(mincount>1) {
@@ -35,6 +58,14 @@ if(mincount>1) {
   minc<-ceiling(median(rowSums(mat_tmp))*mincount)
 }
 mat_ab<-mat_tmp[which(rowSums(mat_tmp)>=minc),]
+# keep same samples on second matrix
+if ( sec ) {
+  if (same ) {
+    second_ab<-second_tmp[rownames(mat_ab),]
+  } else {
+    second_ab<-second[rownames(mat_ab),]
+  }
+}
 
 # Normalize read counts by multiplying each sample read counts by the ratio of half the read count median of all samples divide by total sample read counts
 # better than rarefaction (but see McMurdie & Holmes, 2014)
@@ -58,6 +89,28 @@ if(norm=="no") {
     mat_norm<-round(mat_tmp*(median(rowSums(mat_ab))*depth/rowSums(mat_tmp)))
   }
 }
+# same for second
+if ( sec & same ) {
+  if(norm=="no") {
+    second_norm<-second_ab
+  } else {
+    if(norm=="ratio") {
+      second_tmp<-second_ab
+    } else if(norm=="ratio_log") {
+      second_tmp<-decostand(second_ab,"log")
+    } else if(norm=="ratio_sqrt") {
+      second_tmp<-decostand(second_ab,"hellinger")
+    } else if(norm=="clr") {
+      second_clr<-clr(second_ab)
+      second_tmp<-t(apply(second_clr,1,function(x){(x-min(x)*1.01)*((x!=0)*1)})) # shift all transformed values to positive, except zeroes
+    }
+    if(depth>1) {
+      second_norm<-round(second_tmp*(depth/rowSums(second_tmp)))
+    } else {
+      second_norm<-round(second_tmp*(median(rowSums(second_ab))*depth/rowSums(second_tmp)))
+    }
+  }
+}
 
 # save normalized OTU table and its size
 saveRDS(as.matrix(mat_norm),"mat")
@@ -66,6 +119,18 @@ write(ncol(mat_norm),"nbotu")
 otus<-colnames(mat_norm)
 write(mino,"minocc")
 write(minc,"mincount")
+
+# save second matrix
+if ( sec ) {
+  if( same ) {
+    saveRDS(as.matrix(second_norm),"second")
+    write(ncol(second_norm),"nbsec")
+    write(minos,"minoccsec")
+  } else {
+    saveRDS(as.matrix(second_ab),"second")
+    write(ncol(second_ab),"nbsec")
+  }
+}
 
 # Environmental table check and export
 if ( ! is.na(config$env)) {

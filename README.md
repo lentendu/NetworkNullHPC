@@ -41,6 +41,8 @@ Usage informations will be displayed by invoking:
 The expected input OTU table format is a TAB or space separated file containing samples as rows and OTUs as columns, with the first column containing one field less, so that the first row and the first column could be used as the OTU and sample names, respectively. If the OTU table was edited under Windows OS, pay attention to use Unix compliant end of line (\n).
 If the file name extension is ".rds", the input table will be read with the readRDS function, with expected format being a data.frame with samples names as rownames and OTU names as colnames.
 
+A second input matrix can be provided (e.g. metabolomic data), in which case only the correlations between OTU and the second matrix's entities will be used to construct the networks (i.e. determine significant correlations).
+
 Three outputs are produced:
  - a text summary of the option used and the output network sizes
  - a co-occurrence edge list (if significant edges found)

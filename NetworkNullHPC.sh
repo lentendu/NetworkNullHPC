@@ -8,7 +8,7 @@ NAME
 	Network construction following Connor et al. (2017) for SLURM jod sheduler
 	
 SYNOPSIS
-	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -x nodelist ] INPUT_OTU_MATRIX
+	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -x nodelist ] INPUT_OTU_MATRIX [SECOND_MATRIX]
 
 DESCRIPTION
 	-h	display this help and exit
@@ -43,6 +43,8 @@ DESCRIPTION
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
+	-s	the same minimum occurrence filter and normalization are applied to the second matrix if provided. The default is to not filter entities nor normalize the second matrix. Samples removed by the minimum read count threshold from the input matrix will also be removed from the second matrix.
+	
 	-x nodelist
 		exclude a list of nodes from the ressources granted to array jobs. This correpsond to the SLURM sbatch --exclude option, which allows for jobs to be distributed on a reduced amount of nodes
 
@@ -72,9 +74,10 @@ MINCOUNT=0.1
 NULLM=0
 NORM="ratio"
 LARGECP=1
+SAME=FALSE
 
 # get options
-while getopts ":a:b:d:e:hl:m:n:o:p:r:x:" opt
+while getopts ":a:b:d:e:hl:m:n:o:p:r:sx:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
@@ -89,6 +92,7 @@ do
 		o)	MINOCC=$OPTARG;;
 		p)	SLURMPART=$(echo "#SBATCH -p $OPTARG");;
 		r)	MINCOUNT=$OPTARG;;
+		s)	SAME=TRUE;;
 		x)	SLURMNODEX=$(echo "#SBATCH --exclude $OPTARG");;
 		c)	CLEAN=no;;
 		\?)	echo "# Error" >&2
@@ -108,9 +112,43 @@ then
 	echo "# Error: Input OTU matrix is missing." >&2
 	show_help | fmt -s -w $(tput cols) >&2
 	exit 1
+elif [ ! -f "$1" ]
+then 
+	echo "# Error: Input OTU matrix file not found at : $1" >&2
+	show_help | fmt -s -w $(tput cols) >&2
+	exit 1
+elif [ ! -s "$1" ]
+then 
+	echo "# Error: Input OTU matrix is empty : $1" >&2
+	show_help | fmt -s -w $(tput cols) >&2
+	exit 1
 else
 	FULLINPUT=$(readlink -f $1) ; shift
 	INPUT=${FULLINPUT##*/}
+	if [ ! -z "$1" ]
+	then
+		if [ ! -f "$1" ]
+		then 
+			echo "# Error: Second matrix file not found at : $1" >&2
+			show_help | fmt -s -w $(tput cols) >&2
+			exit 1
+		elif [ ! -s "$1" ]
+		then 
+			echo "# Error: Second matrix is empty : $1" >&2
+			show_help | fmt -s -w $(tput cols) >&2
+			exit 1
+		else
+			if [ "$ENVMAT" != "NA" ]
+			then
+				echo "# Error: cannot use a second matrix together with an environmental matrix!!" >&2
+				show_help | fmt -s -w $(tput cols) >&2
+				exit 1
+			fi
+			SECONDINPUT=$(readlink -f $1) ; shift
+			SECOND=${SECONDINPUT##*/}
+			SIN=" $SECONDINPUT $SAME"
+		fi
+	fi 
 fi
 
 # check me
@@ -132,7 +170,7 @@ then
 fi
 
 # Prepare directories and configuration file
-OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM $NORM $LARGECP")
+OPTIONS=("$FULLINPUT $ENVMAT $BOOTSTRAP $DEPTH $MINOCC $MINCOUNT $NULLM $NORM $LARGECP$SIN")
 MYCK=$(echo ${OPTIONS[@]} | cat - $FULLINPUT | cksum | awk '{print $1}')
 if [ -d "NetworkNullHPC.$MYCK" ]
 then
@@ -143,7 +181,12 @@ then
 fi
 mkdir NetworkNullHPC.$MYCK && cd NetworkNullHPC.$MYCK
 mkdir spearman_noise_r spearman_noise_p spearman_rand_r
-cat <(echo "cksum mat env nboot depth minocc mincount nullm norm largecp") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+if [ -z $SECOND ]
+then
+	cat <(echo "cksum mat env nboot depth minocc mincount nullm norm largecp") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+else
+	cat <(echo "cksum mat env nboot depth minocc mincount nullm norm largecp second same") <(echo "$MYCK ${OPTIONS[@]}") | tr " " "\t" > config
+fi
 
 # Normalize OTU matrix and get its size
 Rscript --vanilla $MYSD/rscripts/clean_mat.R > log.clean_mat.out 2> log.clean_mat.err
@@ -183,16 +226,27 @@ then
 	echo "Aborting."
 	cd ..
 	exit 1
+elif [ $? -eq 5 ]
+then
+	echo "The number of samples in the OTU matrix and the second matrix do not match. Please correct"
+	echo "Aborting."
+	cd ..
+	exit 1
 fi
 
 # Calculate number of parallel jobs and the amount of memory and time to request
 if [ $ENVMAT != "NA" ]
 then
-	matsize=$(( $(cat nbotu) + $(cat nbenv) ))	
+	matsize=$(( $(cat nbotu) + $(cat nbenv) ))
+	pairsize=$((matsize*(matsize-1)/2))
+elif [ ! -z "$SIN" ]
+then
+	matsize=$(( $(cat nbotu) + $(cat nbsec) ))
+	pairsize=$(( $(cat nbotu) * $(cat nbsec) ))
 else
 	matsize=$(cat nbotu)
+	pairsize=$((matsize*(matsize-1)/2))
 fi
-pairsize=$((matsize*(matsize-1)/2))
 memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $blocks -eq 0 ]; then blocks=1 ; fi
@@ -219,12 +273,17 @@ fi
 
 # check previous computation(s) and symlink spearman's rho of observed matrix if identical
 md5sum $FULLINPUT > md5input
+if [ ! -z "$SIN" ] ; then md5sum $SECONDINPUT > md5second ; fi
 for i in ../NetworkNullHPC.*
 do
 	if [ "$(basename $i)" != "$(basename $PWD)" ]
 	then
 		TEST=$(cut -d " " -f 1 $i/md5input | paste - <(echo $FULLINPUT) | md5sum -c --quiet 2> /dev/null)
-		if [ -z "$TEST" ]
+		if [ ! -z "$SIN" ]
+		then 
+			TEST2=$(cut -d " " -f 1 $i/md5second | paste - <(echo $SECONDINPUT) | md5sum -c --quiet 2> /dev/null)
+		fi
+		if [ -z "$TEST" ] && [ -z "$TEST2" ]
 		then
 			PREV=$(readlink -f $i)
 			PREVBOOT=$(cut -f 3 $PREV/config | sed -n '2p')
@@ -246,7 +305,7 @@ done
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
-The normalized matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $matsize OTUs with a minimum occurrence of $(cat minocc).
+The normalized matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $(cat nbotu) OTUs with a minimum occurrence of $(cat minocc).
 $INFOPREV
 EOF
 if [ $ENVMAT != "NA" ]
@@ -255,6 +314,18 @@ then
 
 The environmental parameter table contains $(cat nbenv) variables.
 EOF
+elif [ ! -z "$SIN" ]
+then
+	cat >> info <<EOF
+
+The second matrix contains $(cat nbsamp_ori) samples and $(cat nbsec_ori) entities.
+EOF
+	if [ "$SAME" == "TRUE" ]
+	then
+		cat >> info <<EOF
+The normalized second matrix used for network calculation now contains $(cat nbsec) entities with a minimum occurrence of $(cat minoccsec).
+EOF
+	fi
 fi
 cat info
 
