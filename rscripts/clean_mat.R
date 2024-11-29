@@ -11,7 +11,11 @@ suppressMessages(library(compositions))
 
 # read options
 config<-read.table("config",h=T,colClasses=c(cksum="character",mat="character"))
-mat<-read.table(config$mat,h=T)
+if ( grepl("\\.rds$",config$mat) ) {
+  mat<-readRDS(config$mat)
+} else {
+  mat<-read.table(config$mat,h=T)
+}
 write(nrow(mat),"nbsamp_ori")
 write(ncol(mat),"nbotu_ori")
 for (i in 4:ncol(config)){assign(names(config)[i],config[1,i])}

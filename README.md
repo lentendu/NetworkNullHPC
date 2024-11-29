@@ -1,6 +1,11 @@
 NetworkNullHPC re-implements in R and bash the OTU co-occurrence network inferrence method developped by Connor, Barberàn and Clauset (2017) and use the SLURM job scheduler to parallelize the computations.
 The method is generalized to negative correlations in order to assess both co-occurrence and co-exclusion.
 
+In-short, the algorithm use random permutation of the site by species/OTU/ASV/molecules matrix to determine a Spearman's rank correlation threshold above which the random/spurious correlations are removed.
+Random noise is then added to the input matrix, and Spearman's rank correlation computations are bootstrapped.
+If a pair of OTU (or any other entity) have a Spearman's rank correlation value above the threshold and is significant in 90% or more of the bootstraps, this pair is added to the co-occurrence network.
+The same procedure is applied for negative correlations to form the co-exclusion network.
+
 INSTALLATION
 ------------
 
@@ -34,6 +39,7 @@ Usage informations will be displayed by invoking:
 	NetworkNullHPC.sh -h
 
 The expected input OTU table format is a TAB or space separated file containing samples as rows and OTUs as columns, with the first column containing one field less, so that the first row and the first column could be used as the OTU and sample names, respectively. If the OTU table was edited under Windows OS, pay attention to use Unix compliant end of line (\n).
+If the file name extension is ".rds", the input table will be read with the readRDS function, with expected format being a data.frame with samples names as rownames and OTU names as colnames.
 
 Three outputs are produced:
  - a text summary of the option used and the output network sizes
