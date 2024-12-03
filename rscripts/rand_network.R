@@ -15,11 +15,9 @@ mat<-readRDS("mat")
 if ( ncol(config)>10 ) {
   sec=T
   second<-readRDS("second")
-  size<-ncol(mat)*ncol(second)
   net_name<-expand.grid(colnames(mat),colnames(second))
 } else {
   sec=F
-  size<-ncol(mat)*(ncol(mat)-1)/2
   net_name<-as.data.frame(t(combn(colnames(mat),2)))
 }
 pos_tresh<-scan("pos_tresh_range",quiet=T)

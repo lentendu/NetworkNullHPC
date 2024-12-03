@@ -129,8 +129,8 @@ if (sec) {
   size<-ncol(mat)*ncol(second)
   blocks<-ceiling(size/1e5)
   otusnum<-1:ncol(mat)
-  seqnum<-ncol(mat)+1:ncol(second)
-  name_length<-nchar(ncol(mat)+ncol(second))
+  seqnum<-(ncol(mat)+1):(ncol(mat)+ncol(second))
+  name_length<-nchar(tail(seqnum,1))
   pair_names<-t(expand.grid(sprintf(paste0("%0",name_length,"d"),otusnum),sprintf(paste0("%0",name_length,"d"),seqnum)))
 } else {
   size<-ncol(mat)*(ncol(mat)-1)/2

@@ -241,7 +241,12 @@ then
 	pairsize=$((matsize*(matsize-1)/2))
 elif [ ! -z "$SIN" ]
 then
-	matsize=$(( $(cat nbotu) + $(cat nbsec) ))
+	if [ $(cat nbotu) -lt $(cat nbsec) ]
+	then
+		matsize=$(cat nbotu)
+	else
+		matsize=$(cat nbsec)
+	fi
 	pairsize=$(( $(cat nbotu) * $(cat nbsec) ))
 else
 	matsize=$(cat nbotu)
@@ -305,7 +310,7 @@ done
 cat > info <<EOF
 
 The initial OTU matrix contains $(cat nbsamp_ori) samples and $(cat nbotu_ori) OTUs.
-The normalized matrix used for network calculation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $(cat nbotu) OTUs with a minimum occurrence of $(cat minocc).
+The normalized matrix used for network computation now contains $(cat nbsamp) samples with a minimum read count of $(cat mincount) and $(cat nbotu) OTUs with a minimum occurrence of $(cat minocc).
 $INFOPREV
 EOF
 if [ $ENVMAT != "NA" ]
@@ -324,6 +329,11 @@ EOF
 	then
 		cat >> info <<EOF
 The normalized second matrix used for network calculation now contains $(cat nbsec) entities with a minimum occurrence of $(cat minoccsec).
+EOF
+	elif [ $(cat nbsamp_ori) -ne $(cat nbsamp) ]
+	then
+			cat >> info <<EOF
+The second matrix was reduced to the same $(cat nbsamp) samples to match with the OTU matrix used for network computation.
 EOF
 	fi
 fi

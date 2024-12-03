@@ -126,9 +126,11 @@ if ( sec ) {
     saveRDS(as.matrix(second_norm),"second")
     write(ncol(second_norm),"nbsec")
     write(minos,"minoccsec")
+    nsec<-colnames(second_norm)
   } else {
     saveRDS(as.matrix(second_ab),"second")
     write(ncol(second_ab),"nbsec")
+    nsec<-colnames(second_ab)
   }
 }
 
@@ -149,6 +151,10 @@ if ( ! is.na(config$env)) {
 	write(ncol(env_ab),"nbenv")
 	write(c(otus,colnames(env_ab)),"otus",ncolumns=1)
 } else {
-	write(otus,"otus",ncolumns=1)
+  if ( sec ) {
+    write(c(otus,nsec),"otus",ncolumns=1) 
+  } else {
+    write(otus,"otus",ncolumns=1) 
+  }
 }
 
