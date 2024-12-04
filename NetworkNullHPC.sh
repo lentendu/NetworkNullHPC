@@ -11,11 +11,14 @@ SYNOPSIS
 	Usage: ${0##*/} [-h] [-a account_name] [-b number_of_bootstrap ] [-d expected_depth] [ -e environmetal_parameter_table ] [ -l largest_component_percent ] [ -m null_model ] [-n normalization ] [-o minimum_occurrence_percent] [ -p partition_name ] [-r minimum_read_count] [ -x nodelist ] INPUT_OTU_MATRIX [SECOND_MATRIX]
 
 DESCRIPTION
+
+General options:
+
 	-h	display this help and exit
-	
-	-a account_name
-		Account name for SLURM sbatch -A option.
-	
+
+
+Network computation options:
+
 	-b number_of_bootstrap
 		Number of bootstraped random noise addition. Default: 1000
 	
@@ -37,16 +40,26 @@ DESCRIPTION
 	-o minimum_occurrence_percent
 		Minimum occurrence percentage threshold to keep an OTU. Default: 0.1 * number of samples. Values between 0 and 1 will be use as the minimum sample number ratio. Values above 1 will be used as the minimum number of samples.
 
-	-p partition_name
-		Partition name for SLURM sbatch -p option.
-
 	-r minimum_read_count
 		Minimum read count threshold to keep a sample. Default: 0.1 * median read count per default. Values between 0 and 1 will be use as median read count ratio. Values above 1 will be used as integer read counts.
 	
 	-s	the same minimum occurrence filter and normalization are applied to the second matrix if provided. The default is to not filter entities nor normalize the second matrix. Samples removed by the minimum read count threshold from the input matrix will also be removed from the second matrix.
 	
+
+SLURM job scheduler options:
+
+	-a account_name
+		Account name for SLURM sbatch -A option.
+	
+	-c concurrent_jobs
+		maximum number of concurrent jobs, off by default
+
+	-p partition_name
+		Partition name for SLURM sbatch -p option.
+
 	-x nodelist
 		exclude a list of nodes from the ressources granted to array jobs. This correpsond to the SLURM sbatch --exclude option, which allows for jobs to be distributed on a reduced amount of nodes
+
 
 AUTHOR
 	Guillaume Lentendu
@@ -77,13 +90,14 @@ LARGECP=1
 SAME=FALSE
 
 # get options
-while getopts ":a:b:d:e:hl:m:n:o:p:r:sx:" opt
+while getopts ":a:b:c:d:e:hl:m:n:o:p:r:sx:" opt
 do
 	case $opt in
 		h)	show_help | fmt -s -w $(tput cols)
 			exit 1;;
 		a)	SLURMACCOUNT=$(echo "#SBATCH -A $OPTARG");;
 		b)	BOOTSTRAP=$OPTARG;;
+		c)	CONCUR="%$OPTARG"
 		d)	DEPTH=$OPTARG;;
 		e)	ENVMAT=$(readlink -f $OPTARG);;
 		l)	LARGECP=$OPTARG;;
@@ -255,7 +269,7 @@ fi
 memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $blocks -eq 0 ]; then blocks=1 ; fi
-reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.0000006+1; if(T!=int(T)){T=T+1};print int(T)}')
+reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.000001+1; if(T!=int(T)){T=T+1};print int(T)}')
 if [ $((reqtime*2)) -ge 60 ]
 then
 	array=1-$BOOTSTRAP
@@ -361,7 +375,7 @@ cat > sub_spearman <<EOF
 #!/bin/bash
 
 #SBATCH -J spearman_$MYCK
-#SBATCH -a $array
+#SBATCH -a $array$CONCUR
 #SBATCH -o log.spearman.out
 #SBATCH -e log.spearman.err
 #SBATCH --open-mode=append
@@ -416,7 +430,7 @@ cat > sub_edges <<EOF
 #!/bin/bash
 
 #SBATCH -J edges_$MYCK
-#SBATCH -a 1-${blocks}
+#SBATCH -a 1-${blocks}$CONCUR
 #SBATCH -o log.edges.out
 #SBATCH -e log.edges.err
 #SBATCH --open-mode=append
