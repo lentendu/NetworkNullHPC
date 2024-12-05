@@ -249,11 +249,7 @@ then
 fi
 
 # Calculate number of parallel jobs and the amount of memory and time to request
-if [ $ENVMAT != "NA" ]
-then
-	matsize=$(( $(cat nbotu) + $(cat nbenv) ))
-	pairsize=$((matsize*(matsize-1)/2))
-elif [ ! -z "$SIN" ]
+if [ ! -z "$SIN" ]
 then
 	if [ $(cat nbotu) -lt $(cat nbsec) ]
 	then
@@ -262,11 +258,17 @@ then
 		matsize=$(cat nbsec)
 	fi
 	pairsize=$(( $(cat nbotu) * $(cat nbsec) ))
+	memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/2500000; ; print int(mem+0.5)}')
 else
-	matsize=$(cat nbotu)
+	if [ $ENVMAT != "NA" ]
+	then
+		matsize=$(( $(cat nbotu) + $(cat nbenv) ))
+	else
+		matsize=$(cat nbotu)
+	fi
 	pairsize=$((matsize*(matsize-1)/2))
+	memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 fi
-memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $blocks -eq 0 ]; then blocks=1 ; fi
 reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.000001+1; if(T!=int(T)){T=T+1};print int(T)}')
