@@ -78,6 +78,15 @@ COPYRIGHT
 EOF
 }
 
+error() {
+	echo -e "#Error: $2\n" >&2
+	if [ $1 == "help" ]
+	then 
+		show_help | fmt -s -w $(tput cols)
+	fi
+	exit 1
+} >&2
+
 #set default options
 BOOTSTRAP=1000
 DEPTH=0.5
@@ -97,7 +106,7 @@ do
 			exit 1;;
 		a)	SLURMACCOUNT=$(echo "#SBATCH -A $OPTARG");;
 		b)	BOOTSTRAP=$OPTARG;;
-		c)	CONCUR="%$OPTARG"
+		c)	if [[ $OPTARG =~ "^[0-9]+$" ]] ; then CONCUR="%$OPTARG" else error help "option -c expect an integer" ; fi ;;
 		d)	DEPTH=$OPTARG;;
 		e)	ENVMAT=$(readlink -f $OPTARG);;
 		l)	LARGECP=$OPTARG;;
@@ -123,19 +132,13 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 
 if [ -z "$1" ]
 then 
-	echo "# Error: Input OTU matrix is missing." >&2
-	show_help | fmt -s -w $(tput cols) >&2
-	exit 1
+	error help "Input OTU matrix is missing."
 elif [ ! -f "$1" ]
 then 
-	echo "# Error: Input OTU matrix file not found at : $1" >&2
-	show_help | fmt -s -w $(tput cols) >&2
-	exit 1
+	error help "Input OTU matrix file not found at : $1"
 elif [ ! -s "$1" ]
 then 
-	echo "# Error: Input OTU matrix is empty : $1" >&2
-	show_help | fmt -s -w $(tput cols) >&2
-	exit 1
+	error help "Input OTU matrix is empty : $1"
 else
 	FULLINPUT=$(readlink -f $1) ; shift
 	INPUT=${FULLINPUT##*/}
@@ -143,20 +146,14 @@ else
 	then
 		if [ ! -f "$1" ]
 		then 
-			echo "# Error: Second matrix file not found at : $1" >&2
-			show_help | fmt -s -w $(tput cols) >&2
-			exit 1
+			error help "Second matrix file not found at : $1"
 		elif [ ! -s "$1" ]
 		then 
-			echo "# Error: Second matrix is empty : $1" >&2
-			show_help | fmt -s -w $(tput cols) >&2
-			exit 1
+			error help "Second matrix is empty : $1"
 		else
 			if [ "$ENVMAT" != "NA" ]
 			then
-				echo "# Error: cannot use a second matrix together with an environmental matrix!!" >&2
-				show_help | fmt -s -w $(tput cols) >&2
-				exit 1
+				error help "cannot use a second matrix together with an environmental matrix!!"
 			fi
 			SECONDINPUT=$(readlink -f $1) ; shift
 			SECOND=${SECONDINPUT##*/}
