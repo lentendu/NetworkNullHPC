@@ -266,6 +266,7 @@ else
 	pairsize=$((matsize*(matsize-1)/2))
 	memsize=$(awk -v M=$pairsize 'BEGIN{mem=M/5000000; if(mem!=int(mem)){mem=mem+1};print int(mem)+1}')
 fi
+if [ $(echo "$memsize < 1" | bc) ] ; then memsize=1 ; fi
 blocks=$(( (pairsize/10000+9)/10 ))
 if [ $blocks -eq 0 ]; then blocks=1 ; fi
 reqtime=$(awk -v M=$pairsize 'BEGIN{T=M*0.000001+1; if(T!=int(T)){T=T+1};print int(T)}')
